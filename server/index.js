@@ -74,6 +74,10 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('WebSocket connection closed');
   });
+  
+  ws.on('error', (error) => {
+    console.error('WebSocket error on server side:', error);
+  });
 });
 
 // Webhook endpoint for ElevenLabs
