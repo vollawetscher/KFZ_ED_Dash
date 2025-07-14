@@ -1,3 +1,7 @@
+console.log('--- server/index.js: Script execution started ---');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
