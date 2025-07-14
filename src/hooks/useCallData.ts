@@ -23,8 +23,8 @@ export function useCallData() {
         )
       });
       
-      const response = await fetch(`${API_BASE_URL}/calls?${params}`);
-      
+      const response = await fetch(`${API_BASE_URL}/api/calls?${params}`);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
