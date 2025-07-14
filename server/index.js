@@ -67,7 +67,7 @@ wss.on('connection', (ws) => {
         ws.send(JSON.stringify({ type: 'pong' }));
       }
     } catch (error) {
-      console.error('WebSocket message error:', error);
+      console.error('WebSocket message parsing error:', error);
     }
   });
 
@@ -76,8 +76,13 @@ wss.on('connection', (ws) => {
   });
   
   ws.on('error', (error) => {
-    console.error('WebSocket error on server side:', error);
+    console.error('WebSocket error on client connection:', error);
   });
+});
+
+// Add error handler for the entire WebSocket server
+wss.on('error', (error) => {
+  console.error('WebSocket server error (wss instance):', error);
 });
 
 // Webhook endpoint for ElevenLabs
@@ -291,15 +296,23 @@ async function startServer() {
       .limit(1);
     
     if (error) {
-      console.error('Supabase connection error:', error);
+      console.error('Supabase connection test failed (DB error):', error);
       console.log('Please check your SUPABASE_URL and SUPABASE_ANON_KEY environment variables');
     } else {
       console.log('✅ Supabase connection successful');
     }
   } catch (error) {
-    console.error('Supabase connection test failed:', error);
+    console.error('Supabase connection test failed (catch block):', error);
   }
   
+  // Add error handler for the HTTP server
+  server.on('error', (err) => {
+    console.error('HTTP server error (server.on error):', err);
+    // If the server cannot listen, this is a critical error
+    // We explicitly exit the process to get a clear exit code
+    process.exit(1);
+  });
+
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Webhook endpoint: http://localhost:${PORT}/webhook/elevenlabs`);
@@ -308,4 +321,18 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+startServer().catch((error) => {
+  console.error('Error starting server (startServer catch):', error);
+  process.exit(1); // Ensure process exits on startup error
+});
+
+// Add global error handlers for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
