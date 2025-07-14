@@ -49,6 +49,8 @@ export function useCallData() {
   const fetchStats = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stats`);
+      const response = await fetch(`${API_BASE_URL}/api/stats`);
+
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
