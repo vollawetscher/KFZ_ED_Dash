@@ -19,7 +19,7 @@ function App() {
   });
 
   const { calls, stats, loading, error, total, fetchCalls, addNewCall } = useCallData();
-  const { isConnected, lastMessage } = useWebSocket('ws://localhost:3001');
+  const { isConnected, lastMessage } = useWebSocket('wss://kfzeddash-production.up.railway.app');
 
   // Handle real-time updates
   useEffect(() => {
