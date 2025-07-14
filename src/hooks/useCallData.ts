@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CallRecord, CallsResponse, CallStats, SearchFilters } from '../types';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'https://kfzeddash-production.up.railway.app';
 
 export function useCallData() {
   const [calls, setCalls] = useState<CallRecord[]>([]);
