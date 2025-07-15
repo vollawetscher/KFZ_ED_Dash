@@ -1,5 +1,3 @@
-// server/index.js
-// Fügen Sie diese Zeilen ganz am Anfang der Datei ein
 console.log('--- BOLT DEBUG: Script execution started (stdout) ---');
 console.error('--- BOLT DEBUG: Script execution started (stderr) ---');
 
