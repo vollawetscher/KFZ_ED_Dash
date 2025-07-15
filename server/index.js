@@ -1,6 +1,7 @@
-console.log('--- server/index.js: Script execution started ---');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('PORT:', process.env.PORT);
+// server/index.js
+// Fügen Sie diese Zeilen ganz am Anfang der Datei ein
+console.log('--- BOLT DEBUG: Script execution started (stdout) ---');
+console.error('--- BOLT DEBUG: Script execution started (stderr) ---');
 
 import express from 'express';
 import cors from 'cors';
@@ -13,6 +14,8 @@ import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
+console.log('--- BOLT DEBUG: dotenv.config() called (stdout) ---');
+console.error('--- BOLT DEBUG: dotenv.config() called (stderr) ---');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,6 +26,14 @@ const PORT = process.env.PORT || 3001;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret-key';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ocogjybxeejfftwfcjbs.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
+console.log('--- BOLT DEBUG: Configuration loaded (stdout) ---');
+console.log('--- BOLT DEBUG: PORT:', PORT, '(stdout) ---');
+console.log('--- BOLT DEBUG: SUPABASE_URL:', SUPABASE_URL, '(stdout) ---');
+console.error('--- BOLT DEBUG: Configuration loaded (stderr) ---');
+console.error('--- BOLT DEBUG: PORT:', PORT, '(stderr) ---');
+console.error('--- BOLT DEBUG: SUPABASE_URL:', SUPABASE_URL, '(stderr) ---');
+
 
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -98,6 +109,8 @@ app.post('/webhook/elevenlabs', async (req, res) => {
       method: req.method,
       url: req.url
     });
+    console.error('--- BOLT DEBUG: Webhook received (stderr) ---');
+
 
     const signature = req.headers['x-elevenlabs-signature'];
     const payload = JSON.stringify(req.body);
@@ -145,6 +158,7 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     });
 
     console.log('New call processed:', data.id);
+    console.error('--- BOLT DEBUG: New call processed (stderr) ---');
     res.status(200).json({ message: 'Webhook processed successfully', call_id: data.id });
 
   } catch (error) {
@@ -162,6 +176,9 @@ app.get('/webhook/elevenlabs', (req, res) => {
 // API endpoints
 app.get('/api/calls', async (req, res) => {
   try {
+    console.log('--- BOLT DEBUG: API /api/calls called (stdout) ---');
+    console.error('--- BOLT DEBUG: API /api/calls called (stderr) ---');
+
     const { search, caller, from_date, to_date, limit = 50, offset = 0 } = req.query;
     
     let query = supabase
@@ -231,6 +248,9 @@ app.get('/api/calls/:id', async (req, res) => {
 
 app.get('/api/stats', async (req, res) => {
   try {
+    console.log('--- BOLT DEBUG: API /api/stats called (stdout) ---');
+    console.error('--- BOLT DEBUG: API /api/stats called (stderr) ---');
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -283,6 +303,8 @@ app.get('/api/stats', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  console.log('--- BOLT DEBUG: API /health called (stdout) ---');
+  console.error('--- BOLT DEBUG: API /health called (stderr) ---');
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
@@ -304,6 +326,7 @@ async function startServer() {
       console.log('Please check your SUPABASE_URL and SUPABASE_ANON_KEY environment variables');
     } else {
       console.log('✅ Supabase connection successful');
+      console.error('--- BOLT DEBUG: Supabase connection successful (stderr) ---');
     }
   } catch (error) {
     console.error('Supabase connection test failed (catch block):', error);
@@ -322,6 +345,9 @@ async function startServer() {
     console.log(`Webhook endpoint: http://localhost:${PORT}/webhook/elevenlabs`);
     console.log(`API endpoint: http://localhost:${PORT}/api/calls`);
     console.log(`Database: Supabase (${SUPABASE_URL})`);
+    console.error(`--- BOLT DEBUG: Server running on port ${PORT} (stderr) ---`);
+    console.error(`--- BOLT DEBUG: Webhook endpoint: http://localhost:${PORT}/webhook/elevenlabs (stderr) ---`);
+    console.error(`--- BOLT DEBUG: API endpoint: http://localhost:${PORT}/api/calls (stderr) ---`);
   });
 }
 
@@ -339,4 +365,4 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
-});
+});```
