@@ -135,14 +135,32 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     console.log('--- BOLT DEBUG: Transcript array length:', rawTranscriptArray?.length);
     
     if (Array.isArray(rawTranscriptArray) && rawTranscriptArray.length > 0) {
-      // Debug: Zeige die Struktur des ersten Elements
-      console.log('--- BOLT DEBUG: First transcript item:', JSON.stringify(rawTranscriptArray[0], null, 2));
+      // Debug: Zeige jedes Element im Array
+      rawTranscriptArray.forEach((item, index) => {
+        console.log(`--- BOLT DEBUG: Transcript item ${index}:`, JSON.stringify(item, null, 2));
+        console.log(`--- BOLT DEBUG: Item ${index} keys:`, Object.keys(item));
+        
+        // Teste verschiedene mögliche Eigenschaften
+        console.log(`--- BOLT DEBUG: Item ${index} - text:`, item.text);
+        console.log(`--- BOLT DEBUG: Item ${index} - message:`, item.message);
+        console.log(`--- BOLT DEBUG: Item ${index} - content:`, item.content);
+        console.log(`--- BOLT DEBUG: Item ${index} - transcript:`, item.transcript);
+        console.log(`--- BOLT DEBUG: Item ${index} - value:`, item.value);
+        console.log(`--- BOLT DEBUG: Item ${index} - speaker:`, item.speaker);
+        console.log(`--- BOLT DEBUG: Item ${index} - role:`, item.role);
+      });
       
       // Versuche verschiedene Eigenschaften zu extrahieren
-      fullTranscript = rawTranscriptArray.map(item => {
-        // Prüfe verschiedene mögliche Eigenschaften
-        const text = item.text || item.message || item.content || item.transcript || '';
-        console.log('--- BOLT DEBUG: Extracted text from item:', text);
+      fullTranscript = rawTranscriptArray.map((item, index) => {
+        // Prüfe alle möglichen Eigenschaften
+        const text = item.text || item.message || item.content || item.transcript || item.value || '';
+        console.log(`--- BOLT DEBUG: Extracted text from item ${index}:`, text);
+        
+        // Wenn es einen Speaker gibt, füge ihn hinzu
+        const speaker = item.speaker || item.role || '';
+        if (speaker && text) {
+          return `${speaker}: ${text}`;
+        }
         return text;
       }).filter(text => text.trim() !== '').join('\n');
       
