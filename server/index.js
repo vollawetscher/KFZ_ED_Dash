@@ -128,14 +128,31 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     // Versuchen, das vollständige Transkript zu extrahieren
     let fullTranscript = '';
     const rawTranscriptArray = req.body.data?.transcript;
+    
+    // Debug: Ausgabe des rohen Transkript-Arrays
+    console.log('--- BOLT DEBUG: Raw transcript array:', JSON.stringify(rawTranscriptArray, null, 2));
+    console.log('--- BOLT DEBUG: Is transcript array?', Array.isArray(rawTranscriptArray));
+    console.log('--- BOLT DEBUG: Transcript array length:', rawTranscriptArray?.length);
+    
     if (Array.isArray(rawTranscriptArray) && rawTranscriptArray.length > 0) {
-      // Annahme: Jedes Element im Array hat eine 'text'-Eigenschaft
-      // Wir fügen einen Zeilenumbruch zwischen den einzelnen Transkriptteilen ein
-      fullTranscript = rawTranscriptArray.map(item => item.text || '').join('\n');
+      // Debug: Zeige die Struktur des ersten Elements
+      console.log('--- BOLT DEBUG: First transcript item:', JSON.stringify(rawTranscriptArray[0], null, 2));
+      
+      // Versuche verschiedene Eigenschaften zu extrahieren
+      fullTranscript = rawTranscriptArray.map(item => {
+        // Prüfe verschiedene mögliche Eigenschaften
+        const text = item.text || item.message || item.content || item.transcript || '';
+        console.log('--- BOLT DEBUG: Extracted text from item:', text);
+        return text;
+      }).filter(text => text.trim() !== '').join('\n');
+      
+      console.log('--- BOLT DEBUG: Final extracted transcript:', fullTranscript);
     } else {
+      console.log('--- BOLT DEBUG: Transcript array is empty or not an array, using fallback');
       // Fallback zur Zusammenfassung, falls vollständiges Transkript nicht verfügbar
       // Dies sollte nur als Notlösung dienen, da der Benutzer den vollständigen Verlauf wünscht
       fullTranscript = req.body.data?.analysis?.transcript_summary || '';
+      console.log('--- BOLT DEBUG: Using fallback transcript:', fullTranscript);
     }
 
     // Für caller_number: Da es im Payload nicht direkt vorhanden ist, verwenden wir einen Platzhalter.
