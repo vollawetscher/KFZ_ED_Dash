@@ -11,13 +11,13 @@ export function StatusIndicator({ isConnected }: StatusIndicatorProps) {
       {isConnected ? (
         <>
           <Wifi className="h-4 w-4 text-green-500" />
-          <span className="text-sm text-green-600 font-medium">Connected</span>
+          <span className="text-sm text-green-600 font-medium">Verbunden</span>
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
         </>
       ) : (
         <>
           <WifiOff className="h-4 w-4 text-red-500" />
-          <span className="text-sm text-red-600 font-medium">Disconnected</span>
+          <span className="text-sm text-red-600 font-medium">Getrennt</span>
           <div className="w-2 h-2 bg-red-500 rounded-full"></div>
         </>
       )}

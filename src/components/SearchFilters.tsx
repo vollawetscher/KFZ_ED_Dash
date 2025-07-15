@@ -23,7 +23,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
       <div className="flex items-center gap-2 mb-4">
         <Filter className="h-5 w-5 text-gray-500" />
-        <h3 className="text-lg font-medium text-gray-900">Search & Filter</h3>
+        <h3 className="text-lg font-medium text-gray-900">Suchen & Filtern</h3>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -31,7 +31,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search transcript..."
+            placeholder="Transkript durchsuchen..."
             value={filters.search}
             onChange={(e) => handleInputChange('search', e.target.value)}
             onKeyPress={handleKeyPress}
@@ -43,7 +43,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Filter by caller number..."
+            placeholder="Nach Anrufernummer filtern..."
             value={filters.caller}
             onChange={(e) => handleInputChange('caller', e.target.value)}
             onKeyPress={handleKeyPress}
@@ -55,7 +55,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
           <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="date"
-            placeholder="From date"
+            placeholder="Von Datum"
             value={filters.from_date}
             onChange={(e) => handleInputChange('from_date', e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -66,7 +66,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
           <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="date"
-            placeholder="To date"
+            placeholder="Bis Datum"
             value={filters.to_date}
             onChange={(e) => handleInputChange('to_date', e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -79,7 +79,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
           onClick={onSearch}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
-          Search
+          Suchen
         </button>
         <button
           onClick={() => {
@@ -88,7 +88,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
           }}
           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
         >
-          Clear
+          Zurücksetzen
         </button>
       </div>
     </div>

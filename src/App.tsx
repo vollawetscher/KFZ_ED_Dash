@@ -48,7 +48,8 @@ function App() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">ElevenLabs Call Dashboard</h1>
-                <p className="text-sm text-gray-500">Real-time call monitoring and transcription</p>
+                <h1 className="text-xl font-bold text-gray-900">KFZ-Zulassung Erding Call Dashboard</h1>
+                <p className="text-sm text-gray-500">Echtzeit-Anrufüberwachung und Transkription</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -70,25 +71,25 @@ function App() {
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatsCard
-              title="Total Calls"
+              title="Gesamtanrufe"
               value={stats.total_calls}
               icon={Phone}
               color="bg-blue-500"
             />
             <StatsCard
-              title="Today's Calls"
+              title="Heutige Anrufe"
               value={stats.today_calls}
               icon={TrendingUp}
               color="bg-green-500"
             />
             <StatsCard
-              title="This Week"
+              title="Diese Woche"
               value={stats.week_calls}
               icon={Calendar}
               color="bg-purple-500"
             />
             <StatsCard
-              title="Unique Callers"
+              title="Einzigartige Anrufer"
               value={stats.unique_callers}
               icon={Users}
               color="bg-orange-500"
@@ -115,11 +116,11 @@ function App() {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium text-gray-900">
-                Recent Calls {total > 0 && `(${total})`}
+                Letzte Anrufe {total > 0 && `(${total})`}
               </h2>
               {!isConnected && (
                 <span className="text-sm text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                  Real-time updates disabled
+                  Echtzeit-Updates deaktiviert
                 </span>
               )}
             </div>
@@ -131,9 +132,9 @@ function App() {
             ) : calls.length === 0 ? (
               <div className="text-center py-8">
                 <Phone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No calls found</p>
+                <p className="text-gray-500">Keine Anrufe gefunden</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  Calls will appear here once the webhook receives data
+                  Anrufe erscheinen hier, sobald der Webhook Daten empfängt
                 </p>
               </div>
             ) : (
@@ -144,20 +145,6 @@ function App() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Webhook Info */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 mb-2">Webhook Configuration</h3>
-          <p className="text-blue-800 mb-4">
-            Configure your ElevenLabs webhook to point to this endpoint:
-          </p>
-          <div className="bg-white rounded border border-blue-200 p-3 font-mono text-sm">
-            http://localhost:3001/webhook/elevenlabs
-          </div>
-          <p className="text-sm text-blue-700 mt-3">
-            Make sure to set the WEBHOOK_SECRET environment variable for security.
-          </p>
         </div>
       </main>
     </div>

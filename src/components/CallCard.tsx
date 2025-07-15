@@ -44,12 +44,12 @@ export function CallCard({ call }: CallCardProps) {
         const text = trimmedLine.replace('user:', '').trim();
         return (
           <div key={index} className="mb-3">
-            <div className="flex items-start gap-3 justify-end">
-              <div className="flex-1 bg-gray-100 rounded-lg p-3">
-                <p className="text-gray-800 text-sm leading-relaxed">{text}</p>
-              </div>
+            <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-12 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white text-xs font-medium">User</span>
+              </div>
+              <div className="flex-1 bg-gray-100 rounded-lg p-3">
+                <p className="text-gray-800 text-sm leading-relaxed">{text}</p>
               </div>
             </div>
           </div>
@@ -74,7 +74,7 @@ export function CallCard({ call }: CallCardProps) {
           </div>
           <div>
             <h3 className="font-medium text-gray-900">{call.caller_number}</h3>
-            <p className="text-sm text-gray-500">Call ID: {call.id}</p>
+            <p className="text-sm text-gray-500">Anruf-ID: {call.id}</p>
           </div>
         </div>
         <div className="text-right">
