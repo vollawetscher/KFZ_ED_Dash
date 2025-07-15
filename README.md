@@ -6,8 +6,10 @@ A production-ready dashboard for monitoring ElevenLabs post-call webhooks with r
 
 - **Secure Webhook Endpoint**: HMAC signature validation for ElevenLabs webhooks
 - **Real-time Updates**: WebSocket integration for live call data updates
-- **Advanced Search & Filtering**: Filter by caller number, date range, and transcript content
+- **Advanced Search & Filtering**: Filter by caller number, conversation ID, date range, and transcript content
+- **AI Evaluation Results**: Display detailed evaluation criteria with collapsible interface for better readability
 - **Comprehensive Analytics**: Call statistics and caller insights
+- **Space-Saving Design**: Collapsible evaluation results and conversation transcripts with smooth animations
 - **Responsive Design**: Modern UI that works on all devices
 - **Production Ready**: Error handling, logging, and security best practices
 
@@ -127,7 +129,7 @@ This webhook receives the complete call transcript and metadata, including the c
 
 - `POST /webhook/elevenlabs` - Receive ElevenLabs post-call transcription webhooks
 - `POST /webhook/elevenlabs-initiation-data` - Receive ElevenLabs initiation data webhooks
-- `GET /api/calls` - Get paginated call records with filtering
+- `GET /api/calls` - Get paginated call records with filtering (supports: search, caller, conv_id, from_date, to_date, limit, offset)
 - `GET /api/calls/:id` - Get specific call record
 - `GET /api/stats` - Get call statistics
 
@@ -158,6 +160,37 @@ The `calls` table structure:
 - `duration`: Call duration in seconds (optional)
 - `processed_at`: When the webhook was processed
 - `created_at`: Record creation timestamp
+- `evaluation_results`: JSONB object containing AI evaluation criteria results with detailed rationales
+
+### Evaluation Results Structure
+
+The `evaluation_results` field contains a JSONB object with the following structure:
+
+```json
+{
+  "criterion_identifier": {
+    "result": "success" | "failure",
+    "rationale": "Detailed explanation of the evaluation result",
+    "criteria_id": "unique_identifier_for_criterion"
+  }
+}
+```
+
+**Example:**
+```json
+{
+  "response_accuracy": {
+    "result": "success",
+    "rationale": "The agent correctly provided accurate information about the registration process",
+    "criteria_id": "acc_001"
+  },
+  "appointment_reference": {
+    "result": "failure", 
+    "rationale": "The agent referred to incorrect website URL",
+    "criteria_id": "ref_002"
+  }
+}
+```
 
 ## Deployment
 
