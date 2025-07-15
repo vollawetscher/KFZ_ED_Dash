@@ -124,6 +124,9 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     // Extrahieren der caller_id aus den dynamic_variables (falls verfügbar)
     const callerNumber = req.body.data?.conversation_initiation_client_data?.dynamic_variables?.caller_id || 'unknown_caller';
 
+    // Extrahieren der evaluation_results aus der Analyse (falls verfügbar)
+    const evaluationResults = req.body.data?.analysis?.evaluation_results || null;
+
     // Überprüfen der erforderlichen Felder
     if (!conversationId || !fullTranscript) {
       console.error('Missing required fields for call record:', req.body);
@@ -137,7 +140,8 @@ app.post('/webhook/elevenlabs', async (req, res) => {
       transcript: fullTranscript,
       timestamp: eventTimestamp ? new Date(eventTimestamp * 1000).toISOString() : new Date().toISOString(),
       duration: callDurationSecs || null,
-      processed_at: new Date().toISOString()
+      processed_at: new Date().toISOString(),
+      evaluation_results: evaluationResults
     };
 
     // Insert into Supabase

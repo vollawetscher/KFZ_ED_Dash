@@ -5,6 +5,7 @@ export interface CallRecord {
   timestamp: string;
   duration?: number | null;
   processed_at: string;
+  evaluation_results?: any;
 }
 
 export interface CallsResponse {
