@@ -121,8 +121,8 @@ app.post('/webhook/elevenlabs', async (req, res) => {
       fullTranscript = req.body.data?.analysis?.transcript_summary || '';
     }
 
-    // Für caller_number: Da es im Payload nicht direkt vorhanden ist, verwenden wir einen Platzhalter.
-    const callerNumber = 'unknown_caller'; // Temporärer Platzhalter
+    // Extrahieren der caller_id aus den dynamic_variables (falls verfügbar)
+    const callerNumber = req.body.data?.conversation_initiation_client_data?.dynamic_variables?.caller_id || 'unknown_caller';
 
     // Überprüfen der erforderlichen Felder
     if (!conversationId || !fullTranscript) {
@@ -158,11 +158,59 @@ app.post('/webhook/elevenlabs', async (req, res) => {
       data: data
     });
 
-    console.log('New call processed:', data.id);
+    console.log('New call processed:', data.id, 'from caller:', callerNumber);
     res.status(200).json({ message: 'Webhook processed successfully', call_id: data.id });
 
   } catch (error) {
     console.error('Webhook processing error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Webhook endpoint for ElevenLabs initiation data
+app.post('/webhook/elevenlabs-initiation-data', async (req, res) => {
+  try {
+    const signature = req.headers['x-elevenlabs-signature'];
+    const payload = JSON.stringify(req.body);
+
+    // Validate HMAC signature if provided
+    if (signature && !validateHMACSignature(payload, signature, WEBHOOK_SECRET)) {
+      console.error('Invalid HMAC signature for initiation webhook');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    // Extract caller_id from the request body
+    const callerId = req.body.caller_id;
+    const agentId = req.body.agent_id;
+    const calledNumber = req.body.called_number;
+    const callSid = req.body.call_sid;
+
+    console.log('Initiation webhook received:', {
+      caller_id: callerId,
+      agent_id: agentId,
+      called_number: calledNumber,
+      call_sid: callSid
+    });
+
+    // Validate required fields
+    if (!callerId) {
+      console.error('Missing caller_id in initiation webhook');
+      return res.status(400).json({ error: 'Missing caller_id' });
+    }
+
+    // Construct the expected response format for ElevenLabs
+    const response = {
+      type: "conversation_initiation_client_data",
+      dynamic_variables: {
+        caller_id: callerId
+      }
+    };
+
+    console.log('Sending initiation response:', response);
+    res.status(200).json(response);
+
+  } catch (error) {
+    console.error('Initiation webhook processing error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

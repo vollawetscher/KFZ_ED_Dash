@@ -57,28 +57,79 @@ A production-ready dashboard for monitoring ElevenLabs post-call webhooks with r
 
 1. Go to your ElevenLabs dashboard
 2. Navigate to webhook settings
-3. Set the webhook URL to: `http://your-domain:3001/webhook/elevenlabs`
+3. Configure the following webhooks:
+   - **Post-call transcription webhook**: `http://your-domain:3001/webhook/elevenlabs`
+   - **Fetch initiation client data webhook**: `http://your-domain:3001/webhook/elevenlabs-initiation-data`
 4. Configure the secret key (same as WEBHOOK_SECRET in your .env)
+
+### Webhook Details
+
+#### 1. Initiation Data Webhook (`/webhook/elevenlabs-initiation-data`)
+
+This webhook is called by ElevenLabs when an inbound Twilio call is initiated to fetch dynamic client data.
+
+**Request Payload (from ElevenLabs):**
+```json
+{
+  "caller_id": "+1234567890",
+  "agent_id": "agent-123",
+  "called_number": "+0987654321",
+  "call_sid": "twilio-call-sid-123"
+}
+```
+
+**Response Format (to ElevenLabs):**
+```json
+{
+  "type": "conversation_initiation_client_data",
+  "dynamic_variables": {
+    "caller_id": "+1234567890"
+  }
+}
+```
+
+#### 2. Post-call Transcription Webhook (`/webhook/elevenlabs`)
+
+This webhook receives the complete call transcript and metadata, including the caller ID that was stored during initiation.
 
 ### Expected Webhook Payload
 
+**Post-call Transcription Payload:**
 ```json
 {
-  "caller_number": "+1234567890",
-  "transcript": "Full call transcript here...",
-  "call_id": "unique-call-id",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "duration": 120
+  "type": "post_call_transcription",
+  "event_timestamp": 1705312200,
+  "data": {
+    "conversation_id": "unique-conversation-id",
+    "transcript": [
+      {
+        "speaker": "agent",
+        "text": "Hello, how can I help you?"
+      },
+      {
+        "speaker": "user", 
+        "text": "I need help with my registration."
+      }
+    ],
+    "metadata": {
+      "call_duration_secs": 120
+    },
+    "conversation_initiation_client_data": {
+      "dynamic_variables": {
+        "caller_id": "+1234567890"
+      }
+    }
+  }
 }
 ```
 
 ## API Endpoints
 
-- `POST /webhook/elevenlabs` - Receive ElevenLabs webhooks
+- `POST /webhook/elevenlabs` - Receive ElevenLabs post-call transcription webhooks
+- `POST /webhook/elevenlabs-initiation-data` - Receive ElevenLabs initiation data webhooks
 - `GET /api/calls` - Get paginated call records with filtering
 - `GET /api/calls/:id` - Get specific call record
 - `GET /api/stats` - Get call statistics
-- `GET /health` - Health check endpoint
 
 ## Security Features
 
