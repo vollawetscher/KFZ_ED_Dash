@@ -1,3 +1,9 @@
+export interface EvaluationResult {
+  identifier: string;
+  result: 'success' | 'failure';
+  rationale: string;
+}
+
 export interface CallRecord {
   id: string;
   caller_number: string;
@@ -5,7 +11,7 @@ export interface CallRecord {
   timestamp: string;
   duration?: number | null;
   processed_at: string;
-  evaluation_results?: any;
+  evaluation_results?: EvaluationResult[] | null;
 }
 
 export interface CallsResponse {

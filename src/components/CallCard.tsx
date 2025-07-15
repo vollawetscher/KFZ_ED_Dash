@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Phone, Clock, Calendar, ChevronDown, ChevronUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { CallRecord } from '../types';
+import { CallRecord, EvaluationResult } from '../types';
 import { format } from 'date-fns';
 
 interface CallCardProps {
@@ -65,80 +65,45 @@ export function CallCard({ call }: CallCardProps) {
     }).filter(Boolean);
   };
 
-  const renderEvaluationResults = (evaluationResults: any) => {
+  const renderEvaluationResults = (evaluationResults: EvaluationResult[]) => {
     if (!evaluationResults) return null;
 
-    // Handle different possible structures of evaluation_results
-    let results = [];
-    
-    if (Array.isArray(evaluationResults)) {
-      results = evaluationResults;
-    } else if (typeof evaluationResults === 'object') {
-      // Convert object to array format
-      results = Object.entries(evaluationResults).map(([key, value]) => ({
-        criterion: key,
-        result: value,
-        score: typeof value === 'object' ? value.score : value
-      }));
-    }
-
-    if (results.length === 0) return null;
+    if (!Array.isArray(evaluationResults) || evaluationResults.length === 0) return null;
 
     return (
       <div className="mb-4">
         <h4 className="font-medium text-gray-900 mb-3">Bewertungsergebnisse</h4>
         <div className="bg-gray-50 rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {results.map((result, index) => {
-              const criterion = result.criterion || result.name || `Kriterium ${index + 1}`;
-              const score = result.score || result.value || result.result;
-              const status = result.status || result.sentiment;
+          <div className="space-y-3">
+            {evaluationResults.map((evaluation, index) => {
+              const isSuccess = evaluation.result === 'success';
+              const colorClass = isSuccess 
+                ? 'bg-green-100 text-green-700 border-green-200' 
+                : 'bg-red-100 text-red-700 border-red-200';
+              const icon = isSuccess ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />;
+              const statusText = isSuccess ? 'Erfüllt' : 'Nicht erfüllt';
               
-              // Determine color based on score or status
-              let colorClass = 'bg-gray-100 text-gray-700';
-              let icon = <AlertCircle className="h-4 w-4" />;
-              
-              if (typeof score === 'boolean') {
-                if (score) {
-                  colorClass = 'bg-green-100 text-green-700';
-                  icon = <CheckCircle className="h-4 w-4" />;
-                } else {
-                  colorClass = 'bg-red-100 text-red-700';
-                  icon = <XCircle className="h-4 w-4" />;
-                }
-              } else if (typeof score === 'string') {
-                if (score.toLowerCase().includes('positive') || score.toLowerCase().includes('good') || score.toLowerCase().includes('erfolgreich')) {
-                  colorClass = 'bg-green-100 text-green-700';
-                  icon = <CheckCircle className="h-4 w-4" />;
-                } else if (score.toLowerCase().includes('negative') || score.toLowerCase().includes('bad') || score.toLowerCase().includes('fehler')) {
-                  colorClass = 'bg-red-100 text-red-700';
-                  icon = <XCircle className="h-4 w-4" />;
-                } else if (score.toLowerCase().includes('neutral') || score.toLowerCase().includes('ok')) {
-                  colorClass = 'bg-yellow-100 text-yellow-700';
-                  icon = <AlertCircle className="h-4 w-4" />;
-                }
-              } else if (typeof score === 'number') {
-                if (score >= 0.7) {
-                  colorClass = 'bg-green-100 text-green-700';
-                  icon = <CheckCircle className="h-4 w-4" />;
-                } else if (score >= 0.4) {
-                  colorClass = 'bg-yellow-100 text-yellow-700';
-                  icon = <AlertCircle className="h-4 w-4" />;
-                } else {
-                  colorClass = 'bg-red-100 text-red-700';
-                  icon = <XCircle className="h-4 w-4" />;
-                }
-              }
-              
+              // Format identifier for display (convert snake_case to readable format)
+              const displayName = evaluation.identifier
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase());
+
               return (
-                <div key={index} className={`rounded-lg p-3 flex items-center gap-2 ${colorClass}`}>
-                  {icon}
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{criterion}</div>
-                    <div className="text-xs opacity-75">
-                      {typeof score === 'number' ? `${(score * 100).toFixed(0)}%` : 
-                       typeof score === 'boolean' ? (score ? 'Erfüllt' : 'Nicht erfüllt') : 
-                       String(score)}
+                <div key={index} className={`rounded-lg p-4 border ${colorClass}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-sm">{displayName}</h5>
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-white bg-opacity-60">
+                          {statusText}
+                        </span>
+                      </div>
+                      <p className="text-xs leading-relaxed opacity-90">
+                        {evaluation.rationale}
+                      </p>
                     </div>
                   </div>
                 </div>

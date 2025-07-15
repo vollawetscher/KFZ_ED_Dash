@@ -125,7 +125,7 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     const callerNumber = req.body.data?.conversation_initiation_client_data?.dynamic_variables?.caller_id || 'unknown_caller';
 
     // Extrahieren der evaluation_results aus der Analyse (falls verfügbar)
-    const evaluationResults = req.body.data?.analysis?.evaluation_results || null;
+    const evaluationResults = req.body.data?.analysis?.evaluation_criteria_results || null;
 
     // Überprüfen der erforderlichen Felder
     if (!conversationId || !fullTranscript) {
