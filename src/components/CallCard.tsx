@@ -218,7 +218,7 @@ export function CallCard({ call }: CallCardProps) {
               isTranscriptExpanded ? 'max-h-none' : 'max-h-80'
             } ${isTranscriptExpanded ? '' : 'overflow-hidden'}`}
           >
-            <div className={isTranscriptExpanded ? 'max-h-none overflow-visible' : 'max-h-72 overflow-y-auto'}>
+            <div className={isTranscriptExpanded ? 'max-h-none overflow-visible' : 'max-h-40 overflow-y-auto'}>
               {formatTranscript(call.transcript)}
             </div>
           </div>

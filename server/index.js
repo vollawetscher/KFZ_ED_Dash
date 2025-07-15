@@ -270,7 +270,7 @@ app.get('/api/calls', async (req, res) => {
     }
     
     if (conv_id) {
-      query = query.eq('id', conv_id);
+      query = query.ilike('id', `%${conv_id}%`);
     }
     
     if (from_date) {
