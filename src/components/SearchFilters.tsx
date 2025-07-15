@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Phone, Calendar, Filter } from 'lucide-react';
+import { Search, Phone, Calendar, Filter, Hash } from 'lucide-react';
 import { SearchFilters as SearchFiltersType } from '../types';
 
 interface SearchFiltersProps {
@@ -26,7 +26,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
         <h3 className="text-lg font-medium text-gray-900">Suchen & Filtern</h3>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -46,6 +46,18 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
             placeholder="Nach Anrufernummer filtern..."
             value={filters.caller}
             onChange={(e) => handleInputChange('caller', e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div className="relative">
+          <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Nach Konversations-ID..."
+            value={filters.conv_id}
+            onChange={(e) => handleInputChange('conv_id', e.target.value)}
             onKeyPress={handleKeyPress}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -83,7 +95,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
         </button>
         <button
           onClick={() => {
-            onFiltersChange({ search: '', caller: '', from_date: '', to_date: '' });
+            onFiltersChange({ search: '', caller: '', conv_id: '', from_date: '', to_date: '' });
             onSearch();
           }}
           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"

@@ -66,16 +66,18 @@ export function CallCard({ call }: CallCardProps) {
   };
 
   const renderEvaluationResults = (evaluationResults: EvaluationResult[]) => {
-    if (!evaluationResults) return null;
+  const renderEvaluationResults = (evaluationResults: Record<string, EvaluationResult>) => {
+    if (!evaluationResults || typeof evaluationResults !== 'object') return null;
 
-    if (!Array.isArray(evaluationResults) || evaluationResults.length === 0) return null;
+    const entries = Object.entries(evaluationResults);
+    if (entries.length === 0) return null;
 
     return (
       <div className="mb-4">
         <h4 className="font-medium text-gray-900 mb-3">Bewertungsergebnisse</h4>
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="space-y-3">
-            {evaluationResults.map((evaluation, index) => {
+            {entries.map(([identifier, evaluation], index) => {
               const isSuccess = evaluation.result === 'success';
               const colorClass = isSuccess 
                 ? 'bg-green-100 text-green-700 border-green-200' 
@@ -84,7 +86,7 @@ export function CallCard({ call }: CallCardProps) {
               const statusText = isSuccess ? 'Erfüllt' : 'Nicht erfüllt';
               
               // Format identifier for display (convert snake_case to readable format)
-              const displayName = evaluation.identifier
+              const displayName = identifier
                 .replace(/_/g, ' ')
                 .replace(/\b\w/g, l => l.toUpperCase());
 
@@ -101,7 +103,7 @@ export function CallCard({ call }: CallCardProps) {
                           {statusText}
                         </span>
                       </div>
-                      <p className="text-xs leading-relaxed opacity-90">
+                      <p className="text-xs leading-relaxed text-gray-600 mt-2">
                         {evaluation.rationale}
                       </p>
                     </div>

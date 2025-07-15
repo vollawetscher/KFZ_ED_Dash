@@ -14,6 +14,7 @@ function App() {
   const [filters, setFilters] = useState<SearchFiltersType>({
     search: '',
     caller: '',
+    conv_id: '',
     from_date: '',
     to_date: ''
   });

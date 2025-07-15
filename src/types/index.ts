@@ -1,7 +1,7 @@
 export interface EvaluationResult {
-  identifier: string;
   result: 'success' | 'failure';
   rationale: string;
+  criteria_id: string;
 }
 
 export interface CallRecord {
@@ -11,7 +11,7 @@ export interface CallRecord {
   timestamp: string;
   duration?: number | null;
   processed_at: string;
-  evaluation_results?: EvaluationResult[] | null;
+  evaluation_results?: Record<string, EvaluationResult> | null;
 }
 
 export interface CallsResponse {
@@ -31,6 +31,7 @@ export interface CallStats {
 export interface SearchFilters {
   search: string;
   caller: string;
+  conv_id: string;
   from_date: string;
   to_date: string;
 }

@@ -228,7 +228,7 @@ app.get('/webhook/elevenlabs', (req, res) => {
 // API endpoints
 app.get('/api/calls', async (req, res) => {
   try {
-    const { search, caller, from_date, to_date, limit = 50, offset = 0 } = req.query;
+    const { search, caller, conv_id, from_date, to_date, limit = 50, offset = 0 } = req.query;
     
     let query = supabase
       .from('calls')
@@ -242,6 +242,10 @@ app.get('/api/calls', async (req, res) => {
     
     if (caller) {
       query = query.ilike('caller_number', `%${caller}%`);
+    }
+    
+    if (conv_id) {
+      query = query.eq('id', conv_id);
     }
     
     if (from_date) {
