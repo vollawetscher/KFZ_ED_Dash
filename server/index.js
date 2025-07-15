@@ -1,6 +1,3 @@
-console.log('--- BOLT DEBUG: Script execution started (stdout) ---');
-console.error('--- BOLT DEBUG: Script execution started (stderr) ---');
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -12,8 +9,6 @@ import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
-console.log('--- BOLT DEBUG: dotenv.config() called (stdout) ---');
-console.error('--- BOLT DEBUG: dotenv.config() called (stderr) ---');
 
 const app = express();
 const server = http.createServer(app);
@@ -24,14 +19,6 @@ const PORT = process.env.PORT || 3001;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret-key';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ocogjybxeejfftwfcjbs.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
-console.log('--- BOLT DEBUG: Configuration loaded (stdout) ---');
-console.log('--- BOLT DEBUG: PORT:', PORT, '(stdout) ---');
-console.log('--- BOLT DEBUG: SUPABASE_URL:', SUPABASE_URL, '(stdout) ---');
-console.error('--- BOLT DEBUG: Configuration loaded (stderr) ---');
-console.error('--- BOLT DEBUG: PORT:', PORT, '(stderr) ---');
-console.error('--- BOLT DEBUG: SUPABASE_URL:', SUPABASE_URL, '(stderr) ---');
-
 
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -95,21 +82,12 @@ wss.on('connection', (ws) => {
 
 // Add error handler for the entire WebSocket server
 wss.on('error', (error) => {
-  console.error('WebSocket server error (wss instance):', error);
+  console.error('WebSocket server error:', error);
 });
 
 // Webhook endpoint for ElevenLabs
 app.post('/webhook/elevenlabs', async (req, res) => {
   try {
-    console.log('Webhook received:', {
-      headers: req.headers,
-      body: req.body,
-      method: req.method,
-      url: req.url
-    });
-    console.error('--- BOLT DEBUG: Webhook received (stderr) ---');
-
-
     const signature = req.headers['x-elevenlabs-signature'];
     const payload = JSON.stringify(req.body);
 
@@ -129,56 +107,24 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     let fullTranscript = '';
     const rawTranscriptArray = req.body.data?.transcript;
     
-    // Debug: Ausgabe des rohen Transkript-Arrays
-    console.log('--- BOLT DEBUG: Raw transcript array:', JSON.stringify(rawTranscriptArray, null, 2));
-    console.log('--- BOLT DEBUG: Is transcript array?', Array.isArray(rawTranscriptArray));
-    console.log('--- BOLT DEBUG: Transcript array length:', rawTranscriptArray?.length);
-    
     if (Array.isArray(rawTranscriptArray) && rawTranscriptArray.length > 0) {
-      // Debug: Zeige jedes Element im Array
-      rawTranscriptArray.forEach((item, index) => {
-        console.log(`--- BOLT DEBUG: Transcript item ${index}:`, JSON.stringify(item, null, 2));
-        console.log(`--- BOLT DEBUG: Item ${index} keys:`, Object.keys(item));
-        
-        // Teste verschiedene mögliche Eigenschaften
-        console.log(`--- BOLT DEBUG: Item ${index} - text:`, item.text);
-        console.log(`--- BOLT DEBUG: Item ${index} - message:`, item.message);
-        console.log(`--- BOLT DEBUG: Item ${index} - content:`, item.content);
-        console.log(`--- BOLT DEBUG: Item ${index} - transcript:`, item.transcript);
-        console.log(`--- BOLT DEBUG: Item ${index} - value:`, item.value);
-        console.log(`--- BOLT DEBUG: Item ${index} - speaker:`, item.speaker);
-        console.log(`--- BOLT DEBUG: Item ${index} - role:`, item.role);
-      });
-      
-      // Versuche verschiedene Eigenschaften zu extrahieren
-      fullTranscript = rawTranscriptArray.map((item, index) => {
-        // Prüfe alle möglichen Eigenschaften
+      fullTranscript = rawTranscriptArray.map((item) => {
         const text = item.text || item.message || item.content || item.transcript || item.value || '';
-        console.log(`--- BOLT DEBUG: Extracted text from item ${index}:`, text);
-        
-        // Wenn es einen Speaker gibt, füge ihn hinzu
         const speaker = item.speaker || item.role || '';
         if (speaker && text) {
           return `${speaker}: ${text}`;
         }
         return text;
       }).filter(text => text.trim() !== '').join('\n');
-      
-      console.log('--- BOLT DEBUG: Final extracted transcript:', fullTranscript);
     } else {
-      console.log('--- BOLT DEBUG: Transcript array is empty or not an array, using fallback');
       // Fallback zur Zusammenfassung, falls vollständiges Transkript nicht verfügbar
-      // Dies sollte nur als Notlösung dienen, da der Benutzer den vollständigen Verlauf wünscht
       fullTranscript = req.body.data?.analysis?.transcript_summary || '';
-      console.log('--- BOLT DEBUG: Using fallback transcript:', fullTranscript);
     }
 
     // Für caller_number: Da es im Payload nicht direkt vorhanden ist, verwenden wir einen Platzhalter.
-    // BITTE PRÜFEN SIE, OB ELEVENLABS DIESE INFO BEREITSTELLT!
     const callerNumber = 'unknown_caller'; // Temporärer Platzhalter
 
     // Überprüfen der erforderlichen Felder
-    // Jetzt prüfen wir, ob conversationId und mindestens ein Transkript (vollständig oder Zusammenfassung) vorhanden ist
     if (!conversationId || !fullTranscript) {
       console.error('Missing required fields for call record:', req.body);
       return res.status(400).json({ error: 'Missing required fields: conversation_id or transcript' });
@@ -186,10 +132,10 @@ app.post('/webhook/elevenlabs', async (req, res) => {
 
     // Erstellen des Call-Records
     const callRecord = {
-      id: conversationId, // Verwenden der conversation_id als call_id
+      id: conversationId,
       caller_number: callerNumber,
-      transcript: fullTranscript, // Hier das vollständige Transkript verwenden
-      timestamp: eventTimestamp ? new Date(eventTimestamp * 1000).toISOString() : new Date().toISOString(), // Unix-Timestamp zu ISO-String
+      transcript: fullTranscript,
+      timestamp: eventTimestamp ? new Date(eventTimestamp * 1000).toISOString() : new Date().toISOString(),
       duration: callDurationSecs || null,
       processed_at: new Date().toISOString()
     };
@@ -213,7 +159,6 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     });
 
     console.log('New call processed:', data.id);
-    console.error('--- BOLT DEBUG: New call processed (stderr) ---');
     res.status(200).json({ message: 'Webhook processed successfully', call_id: data.id });
 
   } catch (error) {
@@ -231,9 +176,6 @@ app.get('/webhook/elevenlabs', (req, res) => {
 // API endpoints
 app.get('/api/calls', async (req, res) => {
   try {
-    console.log('--- BOLT DEBUG: API /api/calls called (stdout) ---');
-    console.error('--- BOLT DEBUG: API /api/calls called (stderr) ---');
-
     const { search, caller, from_date, to_date, limit = 50, offset = 0 } = req.query;
     
     let query = supabase
@@ -303,9 +245,6 @@ app.get('/api/calls/:id', async (req, res) => {
 
 app.get('/api/stats', async (req, res) => {
   try {
-    console.log('--- BOLT DEBUG: API /api/stats called (stdout) ---');
-    console.error('--- BOLT DEBUG: API /api/stats called (stderr) ---');
-
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -358,8 +297,6 @@ app.get('/api/stats', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  console.log('--- BOLT DEBUG: API /health called (stdout) ---');
-  console.error('--- BOLT DEBUG: API /health called (stderr) ---');
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
@@ -377,21 +314,17 @@ async function startServer() {
       .limit(1);
     
     if (error) {
-      console.error('Supabase connection test failed (DB error):', error);
+      console.error('Supabase connection test failed:', error);
       console.log('Please check your SUPABASE_URL and SUPABASE_ANON_KEY environment variables');
     } else {
       console.log('✅ Supabase connection successful');
-      console.error('--- BOLT DEBUG: Supabase connection successful (stderr) ---');
     }
   } catch (error) {
-    console.error('Supabase connection test failed (catch block):', error);
+    console.error('Supabase connection test failed:', error);
   }
   
-  // Add error handler for the HTTP server
   server.on('error', (err) => {
-    console.error('HTTP server error (server.on error):', err);
-    // If the server cannot listen, this is a critical error
-    // We explicitly exit the process to get a clear exit code
+    console.error('HTTP server error:', err);
     process.exit(1);
   });
 
@@ -400,20 +333,12 @@ async function startServer() {
     console.log(`Webhook endpoint: http://localhost:${PORT}/webhook/elevenlabs`);
     console.log(`API endpoint: http://localhost:${PORT}/api/calls`);
     console.log(`Database: Supabase (${SUPABASE_URL})`);
-    console.error(`--- BOLT DEBUG: Server running on port ${PORT} (stderr) ---`);
-    console.error(`--- BOLT DEBUG: Webhook endpoint: http://localhost:${PORT}/webhook/elevenlabs (stderr) ---`);
-    console.error(`--- BOLT DEBUG: API endpoint: http://localhost:${PORT}/api/calls (stderr) ---`);
-    
-    setInterval(() => {
-      console.log('--- BOLT DEBUG: Server process still alive (stdout) ---');
-      console.error('--- BOLT DEBUG: Server process still alive (stderr) ---');
-    }, 10000); // Loggt alle 10 Sekunden
   });
 }
 
 startServer().catch((error) => {
-  console.error('Error starting server (startServer catch):', error);
-  process.exit(1); // Ensure process exits on startup error
+  console.error('Error starting server:', error);
+  process.exit(1);
 });
 
 // Add global error handlers for uncaught exceptions
