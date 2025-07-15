@@ -17,6 +17,52 @@ export function CallCard({ call }: CallCardProps) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const formatTranscript = (transcript: string) => {
+    // Split by lines and format each speaker line
+    const lines = transcript.split('\n');
+    return lines.map((line, index) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return null;
+      
+      // Check if line starts with "agent:" or "user:"
+      if (trimmedLine.startsWith('agent:')) {
+        const text = trimmedLine.replace('agent:', '').trim();
+        return (
+          <div key={index} className="mb-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-12 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                <span className="text-white text-xs font-medium">Bot</span>
+              </div>
+              <div className="flex-1 bg-blue-50 rounded-lg p-3">
+                <p className="text-gray-800 text-sm leading-relaxed">{text}</p>
+              </div>
+            </div>
+          </div>
+        );
+      } else if (trimmedLine.startsWith('user:')) {
+        const text = trimmedLine.replace('user:', '').trim();
+        return (
+          <div key={index} className="mb-3">
+            <div className="flex items-start gap-3 justify-end">
+              <div className="flex-1 bg-gray-100 rounded-lg p-3">
+                <p className="text-gray-800 text-sm leading-relaxed">{text}</p>
+              </div>
+              <div className="flex-shrink-0 w-12 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                <span className="text-white text-xs font-medium">User</span>
+              </div>
+            </div>
+          </div>
+        );
+      } else {
+        // Handle lines that don't start with agent: or user:
+        return (
+          <div key={index} className="mb-2">
+            <p className="text-gray-600 text-sm italic">{trimmedLine}</p>
+          </div>
+        );
+      }
+    }).filter(Boolean);
+  };
   const truncateTranscript = (text: string, maxLength: number = 200) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
