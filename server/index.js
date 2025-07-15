@@ -119,21 +119,30 @@ app.post('/webhook/elevenlabs', async (req, res) => {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
-    // Extract relevant data from webhook payload
-    const { caller_number, transcript, call_id, timestamp, duration } = req.body;
-    
-    if (!caller_number || !transcript) {
-      console.error('Missing required fields:', req.body);
-      return res.status(400).json({ error: 'Missing required fields: caller_number, transcript' });
+    // Extrahieren der Daten aus der verschachtelten Struktur des ElevenLabs-Payloads
+    const eventType = req.body.type;
+    const eventTimestamp = req.body.event_timestamp;
+    const conversationId = req.body.data?.conversation_id;
+    const transcriptSummary = req.body.data?.analysis?.transcript_summary;
+    const callDurationSecs = req.body.data?.metadata?.call_duration_secs;
+
+    // Für caller_number: Da es im Payload nicht direkt vorhanden ist, verwenden wir einen Platzhalter.
+    // BITTE PRÜFEN SIE, OB ELEVENLABS DIESE INFO BEREITSTELLT!
+    const callerNumber = 'unknown_caller'; // Temporärer Platzhalter
+
+    // Überprüfen der erforderlichen Felder
+    if (!conversationId || !transcriptSummary) {
+      console.error('Missing required fields in new payload structure:', req.body);
+      return res.status(400).json({ error: 'Missing required fields: conversation_id, transcript_summary' });
     }
 
-    // Create call record
+    // Erstellen des Call-Records
     const callRecord = {
-      id: call_id || crypto.randomUUID(),
-      caller_number,
-      transcript,
-      timestamp: timestamp || new Date().toISOString(),
-      duration: duration || null,
+      id: conversationId, // Verwenden der conversation_id als call_id
+      caller_number: callerNumber,
+      transcript: transcriptSummary,
+      timestamp: eventTimestamp ? new Date(eventTimestamp * 1000).toISOString() : new Date().toISOString(), // Unix-Timestamp zu ISO-String
+      duration: callDurationSecs || null,
       processed_at: new Date().toISOString()
     };
 
