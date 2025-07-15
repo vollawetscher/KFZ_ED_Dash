@@ -123,24 +123,37 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     const eventType = req.body.type;
     const eventTimestamp = req.body.event_timestamp;
     const conversationId = req.body.data?.conversation_id;
-    const transcriptSummary = req.body.data?.analysis?.transcript_summary;
     const callDurationSecs = req.body.data?.metadata?.call_duration_secs;
+
+    // Versuchen, das vollständige Transkript zu extrahieren
+    let fullTranscript = '';
+    const rawTranscriptArray = req.body.data?.transcript;
+    if (Array.isArray(rawTranscriptArray) && rawTranscriptArray.length > 0) {
+      // Annahme: Jedes Element im Array hat eine 'text'-Eigenschaft
+      // Wir fügen einen Zeilenumbruch zwischen den einzelnen Transkriptteilen ein
+      fullTranscript = rawTranscriptArray.map(item => item.text || '').join('\n');
+    } else {
+      // Fallback zur Zusammenfassung, falls vollständiges Transkript nicht verfügbar
+      // Dies sollte nur als Notlösung dienen, da der Benutzer den vollständigen Verlauf wünscht
+      fullTranscript = req.body.data?.analysis?.transcript_summary || '';
+    }
 
     // Für caller_number: Da es im Payload nicht direkt vorhanden ist, verwenden wir einen Platzhalter.
     // BITTE PRÜFEN SIE, OB ELEVENLABS DIESE INFO BEREITSTELLT!
     const callerNumber = 'unknown_caller'; // Temporärer Platzhalter
 
     // Überprüfen der erforderlichen Felder
-    if (!conversationId || !transcriptSummary) {
-      console.error('Missing required fields in new payload structure:', req.body);
-      return res.status(400).json({ error: 'Missing required fields: conversation_id, transcript_summary' });
+    // Jetzt prüfen wir, ob conversationId und mindestens ein Transkript (vollständig oder Zusammenfassung) vorhanden ist
+    if (!conversationId || !fullTranscript) {
+      console.error('Missing required fields for call record:', req.body);
+      return res.status(400).json({ error: 'Missing required fields: conversation_id or transcript' });
     }
 
     // Erstellen des Call-Records
     const callRecord = {
       id: conversationId, // Verwenden der conversation_id als call_id
       caller_number: callerNumber,
-      transcript: transcriptSummary,
+      transcript: fullTranscript, // Hier das vollständige Transkript verwenden
       timestamp: eventTimestamp ? new Date(eventTimestamp * 1000).toISOString() : new Date().toISOString(), // Unix-Timestamp zu ISO-String
       duration: callDurationSecs || null,
       processed_at: new Date().toISOString()
