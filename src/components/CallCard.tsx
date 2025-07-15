@@ -65,7 +65,6 @@ export function CallCard({ call }: CallCardProps) {
     }).filter(Boolean);
   };
 
-  const renderEvaluationResults = (evaluationResults: EvaluationResult[]) => {
   const renderEvaluationResults = (evaluationResults: Record<string, EvaluationResult>) => {
     if (!evaluationResults || typeof evaluationResults !== 'object') return null;
 
@@ -145,7 +144,7 @@ export function CallCard({ call }: CallCardProps) {
         <h4 className="font-medium text-gray-900 mb-2">Gesprächsverlauf</h4>
         <div className="bg-gray-50 rounded-lg p-4">
           {formatTranscript(call.transcript, isExpanded)}
-          {call.transcript.split('\n').length > 5 && ( // Zeigt "Mehr anzeigen" nur an, wenn mehr als 5 Zeilen vorhanden sind
+          {call.transcript.split('\n').length > 5 && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="mt-2 flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
