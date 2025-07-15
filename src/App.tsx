@@ -47,7 +47,6 @@ function App() {
                 <Phone className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">ElevenLabs Call Dashboard</h1>
                 <h1 className="text-xl font-bold text-gray-900">KFZ-Zulassung Erding Call Dashboard</h1>
                 <p className="text-sm text-gray-500">Echtzeit-Anrufüberwachung und Transkription</p>
               </div>
