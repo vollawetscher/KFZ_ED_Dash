@@ -17,14 +17,15 @@ export function CallCard({ call }: CallCardProps) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const formatTranscript = (transcript: string) => {
-    // Split by lines and format each speaker line
+  const formatTranscript = (transcript: string, isExpanded: boolean) => {
     const lines = transcript.split('\n');
-    return lines.map((line, index) => {
+    // Zeigt die ersten 5 Zeilen an, wenn nicht erweitert, sonst alle Zeilen
+    const displayLines = isExpanded ? lines : lines.slice(0, 5);
+
+    return displayLines.map((line, index) => {
       const trimmedLine = line.trim();
       if (!trimmedLine) return null;
       
-      // Check if line starts with "agent:" or "user:"
       if (trimmedLine.startsWith('agent:')) {
         const text = trimmedLine.replace('agent:', '').trim();
         return (
@@ -54,7 +55,7 @@ export function CallCard({ call }: CallCardProps) {
           </div>
         );
       } else {
-        // Handle lines that don't start with agent: or user:
+        // Behandelt Zeilen, die nicht mit agent: oder user: beginnen
         return (
           <div key={index} className="mb-2">
             <p className="text-gray-600 text-sm italic">{trimmedLine}</p>
@@ -62,10 +63,6 @@ export function CallCard({ call }: CallCardProps) {
         );
       }
     }).filter(Boolean);
-  };
-  const truncateTranscript = (text: string, maxLength: number = 200) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
   };
 
   return (
@@ -83,7 +80,7 @@ export function CallCard({ call }: CallCardProps) {
         <div className="text-right">
           <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
             <Calendar className="h-4 w-4" />
-            {format(new Date(call.timestamp), 'MMM dd, yyyy')}
+            {format(new Date(call.timestamp), 'dd.MM.yyyy')}
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Clock className="h-4 w-4" />
@@ -93,12 +90,10 @@ export function CallCard({ call }: CallCardProps) {
       </div>
 
       <div className="mb-4">
-        <h4 className="font-medium text-gray-900 mb-2">Transcript</h4>
+        <h4 className="font-medium text-gray-900 mb-2">Gesprächsverlauf</h4>
         <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-gray-700 leading-relaxed">
-            {isExpanded ? call.transcript : truncateTranscript(call.transcript)}
-          </p>
-          {call.transcript.length > 200 && (
+          {formatTranscript(call.transcript, isExpanded)}
+          {call.transcript.split('\n').length > 5 && ( // Zeigt "Mehr anzeigen" nur an, wenn mehr als 5 Zeilen vorhanden sind
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="mt-2 flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -106,12 +101,12 @@ export function CallCard({ call }: CallCardProps) {
               {isExpanded ? (
                 <>
                   <ChevronUp className="h-4 w-4" />
-                  Show Less
+                  Weniger anzeigen
                 </>
               ) : (
                 <>
                   <ChevronDown className="h-4 w-4" />
-                  Show More
+                  Mehr anzeigen
                 </>
               )}
             </button>
@@ -121,10 +116,10 @@ export function CallCard({ call }: CallCardProps) {
 
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center gap-4">
-          <span>Duration: {formatDuration(call.duration)}</span>
-          <span>Processed: {format(new Date(call.processed_at), 'MMM dd, HH:mm')}</span>
+          <span>Dauer: {formatDuration(call.duration)}</span>
+          <span>Verarbeitet: {format(new Date(call.processed_at), 'dd.MM. HH:mm')}</span>
         </div>
-        <div className="w-2 h-2 bg-green-500 rounded-full" title="Processed successfully"></div>
+        <div className="w-2 h-2 bg-green-500 rounded-full" title="Erfolgreich verarbeitet"></div>
       </div>
     </div>
   );
