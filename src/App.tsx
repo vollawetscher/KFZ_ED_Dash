@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Users, Calendar, TrendingUp, RefreshCw } from 'lucide-react';
+import { Phone, Users, Calendar, TrendingUp, RefreshCw, LogOut } from 'lucide-react';
 import { StatusIndicator } from './components/StatusIndicator';
 import { StatsCard } from './components/StatsCard';
 import { SearchFilters } from './components/SearchFilters';
 import { CallCard } from './components/CallCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
+import { LoginScreen } from './components/LoginScreen';
 import { useCallData } from './hooks/useCallData';
 import { useWebSocket } from './hooks/useWebSocket';
 import { SearchFilters as SearchFiltersType } from './types';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [filters, setFilters] = useState<SearchFiltersType>({
     search: '',
     caller: '',
@@ -21,6 +23,14 @@ function App() {
 
   const { calls, stats, loading, error, total, fetchCalls, addNewCall } = useCallData();
   const { isConnected, lastMessage } = useWebSocket('wss://kfzeddash-production.up.railway.app');
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const authToken = localStorage.getItem('dashboard_auth');
+    if (authToken === 'authenticated') {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Handle real-time updates
   useEffect(() => {
@@ -36,6 +46,20 @@ function App() {
   const handleRefresh = () => {
     fetchCalls(filters);
   };
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('dashboard_auth');
+    setIsAuthenticated(false);
+  };
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,6 +84,14 @@ function App() {
                 title="Refresh data"
               >
                 <RefreshCw className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-sm">Abmelden</span>
               </button>
             </div>
           </div>

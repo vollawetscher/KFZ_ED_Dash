@@ -131,11 +131,11 @@ export function CallCard({ call }: CallCardProps) {
           {/* Expandable Content */}
           <div 
             id="evaluation-details"
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isEvaluationExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            className={`transition-all duration-300 ease-in-out ${
+              isEvaluationExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
             }`}
           >
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-3 overflow-y-auto max-h-[550px]">
               {entries.map(([identifier, evaluation], index) => {
                 const isSuccess = evaluation.result === 'success';
                 const colorClass = isSuccess 

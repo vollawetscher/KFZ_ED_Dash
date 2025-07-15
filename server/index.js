@@ -17,6 +17,7 @@ const wss = new WebSocketServer({ server });
 // Configuration
 const PORT = process.env.PORT || 3001;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret-key';
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'test123';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ocogjybxeejfftwfcjbs.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
@@ -215,6 +216,30 @@ app.post('/webhook/elevenlabs-initiation-data', async (req, res) => {
 
   } catch (error) {
     console.error('Initiation webhook processing error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Login endpoint for simplified authentication
+app.post('/api/login', (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+    
+    if (password === DASHBOARD_PASSWORD) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Login successful',
+        token: 'authenticated' // Simple token for frontend
+      });
+    } else {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
