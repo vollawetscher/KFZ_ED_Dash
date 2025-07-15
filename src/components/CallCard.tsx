@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Clock, Calendar, ChevronDown, ChevronUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Phone, Clock, Calendar, ChevronDown, ChevronUp, CheckCircle, XCircle, AlertCircle, BarChart3 } from 'lucide-react';
 import { CallRecord, EvaluationResult } from '../types';
 import { format } from 'date-fns';
 
@@ -8,7 +8,8 @@ interface CallCardProps {
 }
 
 export function CallCard({ call }: CallCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
+  const [isEvaluationExpanded, setIsEvaluationExpanded] = useState(false);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return 'N/A';
@@ -17,12 +18,10 @@ export function CallCard({ call }: CallCardProps) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const formatTranscript = (transcript: string, isExpanded: boolean) => {
+  const formatTranscript = (transcript: string) => {
     const lines = transcript.split('\n');
-    // Zeigt die ersten 5 Zeilen an, wenn nicht erweitert, sonst alle Zeilen
-    const displayLines = isExpanded ? lines : lines.slice(0, 5);
 
-    return displayLines.map((line, index) => {
+    return lines.map((line, index) => {
       const trimmedLine = line.trim();
       if (!trimmedLine) return null;
       
@@ -55,7 +54,6 @@ export function CallCard({ call }: CallCardProps) {
           </div>
         );
       } else {
-        // Behandelt Zeilen, die nicht mit agent: oder user: beginnen
         return (
           <div key={index} className="mb-2">
             <p className="text-gray-600 text-sm italic">{trimmedLine}</p>
@@ -65,6 +63,31 @@ export function CallCard({ call }: CallCardProps) {
     }).filter(Boolean);
   };
 
+  const renderEvaluationSummary = (evaluationResults: Record<string, EvaluationResult>) => {
+    const entries = Object.entries(evaluationResults);
+    if (entries.length === 0) return null;
+
+    const successCount = entries.filter(([_, evaluation]) => evaluation.result === 'success').length;
+    const failureCount = entries.filter(([_, evaluation]) => evaluation.result === 'failure').length;
+    const totalCount = entries.length;
+
+    return (
+      <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-500" />
+          <span className="text-green-700 font-medium">{successCount} erfüllt</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <XCircle className="h-4 w-4 text-red-500" />
+          <span className="text-red-700 font-medium">{failureCount} nicht erfüllt</span>
+        </div>
+        <div className="text-gray-500">
+          ({totalCount} gesamt)
+        </div>
+      </div>
+    );
+  };
+
   const renderEvaluationResults = (evaluationResults: Record<string, EvaluationResult>) => {
     if (!evaluationResults || typeof evaluationResults !== 'object') return null;
 
@@ -72,44 +95,87 @@ export function CallCard({ call }: CallCardProps) {
     if (entries.length === 0) return null;
 
     return (
-      <div className="mb-4">
-        <h4 className="font-medium text-gray-900 mb-3">Bewertungsergebnisse</h4>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="space-y-3">
-            {entries.map(([identifier, evaluation], index) => {
-              const isSuccess = evaluation.result === 'success';
-              const colorClass = isSuccess 
-                ? 'bg-green-100 text-green-700 border-green-200' 
-                : 'bg-red-100 text-red-700 border-red-200';
-              const icon = isSuccess ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />;
-              const statusText = isSuccess ? 'Erfüllt' : 'Nicht erfüllt';
-              
-              // Format identifier for display (convert snake_case to readable format)
-              const displayName = identifier
-                .replace(/_/g, ' ')
-                .replace(/\b\w/g, l => l.toUpperCase());
+      <div className="mb-6">
+        <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+          {/* Header - Always visible */}
+          <div 
+            className="px-4 py-3 bg-white border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={() => setIsEvaluationExpanded(!isEvaluationExpanded)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setIsEvaluationExpanded(!isEvaluationExpanded);
+              }
+            }}
+            aria-expanded={isEvaluationExpanded}
+            aria-controls="evaluation-details"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="h-5 w-5 text-gray-600" />
+                <h4 className="font-medium text-gray-900">Bewertungsergebnisse</h4>
+              </div>
+              <div className="flex items-center gap-3">
+                {renderEvaluationSummary(evaluationResults)}
+                <ChevronDown 
+                  className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
+                    isEvaluationExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            </div>
+          </div>
 
-              return (
-                <div key={index} className={`rounded-lg p-4 border ${colorClass}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {icon}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium text-sm">{displayName}</h5>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-white bg-opacity-60">
-                          {statusText}
-                        </span>
+          {/* Expandable Content */}
+          <div 
+            id="evaluation-details"
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              isEvaluationExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className="p-4 space-y-3">
+              {entries.map(([identifier, evaluation], index) => {
+                const isSuccess = evaluation.result === 'success';
+                const colorClass = isSuccess 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-red-50 border-red-200';
+                const textColorClass = isSuccess ? 'text-green-800' : 'text-red-800';
+                const icon = isSuccess ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-600" />;
+                const statusText = isSuccess ? 'Erfüllt' : 'Nicht erfüllt';
+                
+                // Format identifier for display
+                const displayName = identifier
+                  .replace(/_/g, ' ')
+                  .replace(/\b\w/g, l => l.toUpperCase());
+
+                return (
+                  <div key={index} className={`rounded-lg p-4 border ${colorClass}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        {icon}
                       </div>
-                      <p className="text-xs leading-relaxed text-gray-600 mt-2">
-                        {evaluation.rationale}
-                      </p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className={`font-medium text-sm ${textColorClass}`}>{displayName}</h5>
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                            isSuccess 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {statusText}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-gray-600">
+                          {evaluation.rationale}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -140,16 +206,32 @@ export function CallCard({ call }: CallCardProps) {
         </div>
       </div>
 
+      {/* Evaluation Results */}
+      {call.evaluation_results && renderEvaluationResults(call.evaluation_results)}
+
+      {/* Conversation Transcript */}
       <div className="mb-4">
-        <h4 className="font-medium text-gray-900 mb-2">Gesprächsverlauf</h4>
-        <div className="bg-gray-50 rounded-lg p-4">
-          {formatTranscript(call.transcript, isExpanded)}
-          {call.transcript.split('\n').length > 5 && (
+        <h4 className="font-medium text-gray-900 mb-3">Gesprächsverlauf</h4>
+        <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+          <div 
+            className={`p-4 transition-all duration-300 ease-in-out ${
+              isTranscriptExpanded ? 'max-h-none' : 'max-h-80'
+            } ${isTranscriptExpanded ? '' : 'overflow-hidden'}`}
+          >
+            <div className={isTranscriptExpanded ? 'max-h-none overflow-visible' : 'max-h-72 overflow-y-auto'}>
+              {formatTranscript(call.transcript)}
+            </div>
+          </div>
+          
+          {/* Expand/Collapse Button */}
+          <div className="px-4 py-3 bg-white border-t border-gray-200">
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="mt-2 flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              onClick={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
+              className="w-full flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+              aria-expanded={isTranscriptExpanded}
+              aria-controls="transcript-content"
             >
-              {isExpanded ? (
+              {isTranscriptExpanded ? (
                 <>
                   <ChevronUp className="h-4 w-4" />
                   Weniger anzeigen
@@ -161,14 +243,12 @@ export function CallCard({ call }: CallCardProps) {
                 </>
               )}
             </button>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Evaluation Results */}
-      {call.evaluation_results && renderEvaluationResults(call.evaluation_results)}
-
-      <div className="flex items-center justify-between text-sm text-gray-500">
+      {/* Call Details Footer */}
+      <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
         <div className="flex items-center gap-4">
           <span>Dauer: {formatDuration(call.duration)}</span>
           <span>Verarbeitet: {format(new Date(call.processed_at), 'dd.MM. HH:mm')}</span>
