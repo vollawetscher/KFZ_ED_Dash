@@ -348,6 +348,11 @@ async function startServer() {
     console.error(`--- BOLT DEBUG: Server running on port ${PORT} (stderr) ---`);
     console.error(`--- BOLT DEBUG: Webhook endpoint: http://localhost:${PORT}/webhook/elevenlabs (stderr) ---`);
     console.error(`--- BOLT DEBUG: API endpoint: http://localhost:${PORT}/api/calls (stderr) ---`);
+    
+    setInterval(() => {
+      console.log('--- BOLT DEBUG: Server process still alive (stdout) ---');
+      console.error('--- BOLT DEBUG: Server process still alive (stderr) ---');
+    }, 10000); // Loggt alle 10 Sekunden
   });
 }
 
