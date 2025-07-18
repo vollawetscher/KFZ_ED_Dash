@@ -12,6 +12,7 @@ export interface CallRecord {
   duration?: number | null;
   processed_at: string;
   evaluation_results?: Record<string, EvaluationResult> | null;
+  is_flagged_for_review?: boolean;
 }
 
 export interface CallsResponse {
