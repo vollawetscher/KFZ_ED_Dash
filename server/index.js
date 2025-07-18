@@ -376,6 +376,41 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// Update call flag status
+app.patch('/api/calls/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_flagged_for_review } = req.body;
+    
+    if (typeof is_flagged_for_review !== 'boolean') {
+      return res.status(400).json({ error: 'is_flagged_for_review must be a boolean' });
+    }
+    
+    const { data, error } = await supabase
+      .from('calls')
+      .update({ is_flagged_for_review })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ error: 'Call not found' });
+    }
+    
+    console.log('Call flag status updated:', id, 'flagged:', is_flagged_for_review);
+    res.json({ message: 'Call flag status updated successfully', call: data });
+    
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
