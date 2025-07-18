@@ -35,7 +35,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
             value={filters.search}
             onChange={(e) => handleInputChange('search', e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
         </div>
         
@@ -47,7 +47,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
             value={filters.caller}
             onChange={(e) => handleInputChange('caller', e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
         </div>
         
@@ -59,7 +59,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
             value={filters.conv_id}
             onChange={(e) => handleInputChange('conv_id', e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
         </div>
         
@@ -70,7 +70,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
             placeholder="Von Datum"
             value={filters.from_date}
             onChange={(e) => handleInputChange('from_date', e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
         </div>
         
@@ -81,7 +81,7 @@ export function SearchFilters({ filters, onFiltersChange, onSearch }: SearchFilt
             placeholder="Bis Datum"
             value={filters.to_date}
             onChange={(e) => handleInputChange('to_date', e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
         </div>
       </div>
