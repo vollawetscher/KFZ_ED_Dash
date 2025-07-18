@@ -278,16 +278,16 @@ export function CallCard({ call, onUpdateFlag }: CallCardProps) {
             className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
               call.is_flagged_for_review
                 ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+               : 'bg-green-100 text-green-700 hover:bg-green-200'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
-            title={call.is_flagged_for_review ? 'Als fehlerfrei markieren' : 'Zur Überprüfung markieren'}
+           title={call.is_flagged_for_review ? 'Als fehlerfrei markieren' : 'Call als fehlerhaft markieren'}
           >
             {isUpdatingFlag ? (
               <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <Flag className="h-3 w-3" />
             )}
-            {call.is_flagged_for_review ? 'Markiert' : 'Markieren'}
+           {call.is_flagged_for_review ? 'Review!' : 'Call OK'}
           </button>
           <div className="w-2 h-2 bg-green-500 rounded-full" title="Erfolgreich verarbeitet"></div>
         </div>
