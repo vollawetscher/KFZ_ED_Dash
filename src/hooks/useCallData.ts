@@ -68,6 +68,34 @@ export function useCallData() {
     fetchStats(); // Refresh stats when new call is added
   }, [fetchStats]);
 
+  const updateCallFlagStatus = useCallback(async (callId: string, isFlagged: boolean) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/calls/${callId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_flagged_for_review: isFlagged }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Update local state
+      setCalls(prev => prev.map(call => 
+        call.id === callId 
+          ? { ...call, is_flagged_for_review: isFlagged }
+          : call
+      ));
+
+      return true;
+    } catch (err) {
+      console.error('Error updating call flag status:', err);
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     fetchCalls();
     fetchStats();
@@ -81,6 +109,7 @@ export function useCallData() {
     total,
     fetchCalls,
     fetchStats,
-    addNewCall
+    addNewCall,
+    updateCallFlagStatus
   };
 }
