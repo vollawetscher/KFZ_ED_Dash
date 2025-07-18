@@ -1,15 +1,33 @@
 import React, { useState } from 'react';
-import { Phone, Clock, Calendar, ChevronDown, ChevronUp, CheckCircle, XCircle, AlertCircle, BarChart3 } from 'lucide-react';
+import { Phone, Clock, Calendar, ChevronDown, ChevronUp, CheckCircle, XCircle, AlertCircle, BarChart3, Flag } from 'lucide-react';
 import { CallRecord, EvaluationResult } from '../types';
 import { format } from 'date-fns';
 
 interface CallCardProps {
   call: CallRecord;
+  onUpdateFlag: (callId: string, isFlagged: boolean) => Promise<boolean>;
 }
 
-export function CallCard({ call }: CallCardProps) {
+export function CallCard({ call, onUpdateFlag }: CallCardProps) {
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
   const [isEvaluationExpanded, setIsEvaluationExpanded] = useState(false);
+  const [isUpdatingFlag, setIsUpdatingFlag] = useState(false);
+
+  const handleFlagToggle = async () => {
+    setIsUpdatingFlag(true);
+    try {
+      const newFlagStatus = !call.is_flagged_for_review;
+      const success = await onUpdateFlag(call.id, newFlagStatus);
+      if (!success) {
+        // Could add a toast notification here in the future
+        console.error('Failed to update call flag status');
+      }
+    } catch (error) {
+      console.error('Error updating call flag status:', error);
+    } finally {
+      setIsUpdatingFlag(false);
+    }
+  };
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return 'N/A';
@@ -253,7 +271,26 @@ export function CallCard({ call }: CallCardProps) {
           <span>Dauer: {formatDuration(call.duration)}</span>
           <span>Verarbeitet: {format(new Date(call.processed_at), 'dd.MM. HH:mm')}</span>
         </div>
-        <div className="w-2 h-2 bg-green-500 rounded-full" title="Erfolgreich verarbeitet"></div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleFlagToggle}
+            disabled={isUpdatingFlag}
+            className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              call.is_flagged_for_review
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            title={call.is_flagged_for_review ? 'Als fehlerfrei markieren' : 'Zur Überprüfung markieren'}
+          >
+            {isUpdatingFlag ? (
+              <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Flag className="h-3 w-3" />
+            )}
+            {call.is_flagged_for_review ? 'Markiert' : 'Markieren'}
+          </button>
+          <div className="w-2 h-2 bg-green-500 rounded-full" title="Erfolgreich verarbeitet"></div>
+        </div>
       </div>
     </div>
   );
