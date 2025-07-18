@@ -22,6 +22,7 @@ function App() {
   });
 
   const { calls, stats, loading, error, total, fetchCalls, addNewCall } = useCallData();
+  const { calls, stats, loading, error, total, fetchCalls, addNewCall, updateCallFlagStatus } = useCallData();
   const { isConnected, lastMessage } = useWebSocket('wss://kfzeddash-production.up.railway.app');
 
   // Check authentication on component mount
@@ -122,6 +123,7 @@ function App() {
             />
             <StatsCard
               title="Einzigartige Anrufer"
+              title="Individuelle Anrufer"
               value={stats.unique_callers}
               icon={Users}
               color="bg-orange-500"
@@ -159,7 +161,7 @@ function App() {
           </div>
 
           <div className="p-6">
-            {loading && calls.length === 0 ? (
+            {loading ? (
               <LoadingSpinner />
             ) : calls.length === 0 ? (
               <div className="text-center py-8">
@@ -172,7 +174,7 @@ function App() {
             ) : (
               <div className="grid gap-6">
                 {calls.map((call) => (
-                  <CallCard key={call.id} call={call} />
+                  <CallCard key={call.id} call={call} onUpdateFlag={updateCallFlagStatus} />
                 ))}
               </div>
             )}
