@@ -21,7 +21,6 @@ function App() {
     to_date: ''
   });
 
-  const { calls, stats, loading, error, total, fetchCalls, addNewCall } = useCallData();
   const { calls, stats, loading, error, total, fetchCalls, addNewCall, updateCallFlagStatus } = useCallData();
   const { isConnected, lastMessage } = useWebSocket('wss://kfzeddash-production.up.railway.app');
 
