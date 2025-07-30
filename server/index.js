@@ -392,15 +392,18 @@ app.get('/api/stats', async (req, res) => {
 
         // Calculate evaluation success rate
         if (call.evaluation_results && typeof call.evaluation_results === 'object') {
-          const evaluations = Object.values(call.evaluation_results);
-          evaluations.forEach(evaluation => {
-            if (evaluation && typeof evaluation === 'object' && evaluation.result) {
-              totalCriteria++;
-              if (evaluation.result === 'success') {
-                totalSuccessfulCriteria++;
+          // Only include calls that are not flagged for review in rating calculation
+          if (!call.is_flagged_for_review) {
+            const evaluations = Object.values(call.evaluation_results);
+            evaluations.forEach(evaluation => {
+              if (evaluation && typeof evaluation === 'object' && evaluation.result) {
+                totalCriteria++;
+                if (evaluation.result === 'success') {
+                  totalSuccessfulCriteria++;
+                }
               }
-            }
-          });
+            });
+          }
         }
       });
     }
