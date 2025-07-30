@@ -37,36 +37,78 @@ export function CallCard({ call, onUpdateFlag }: CallCardProps) {
   };
 
   const formatTranscript = (transcript: string) => {
-    const lines = transcript.split('\n');
+    const lines = transcript.split('\n').map(line => line.trim()).filter(line => line);
+    
+    // Group lines by speaker to handle multi-line responses
+    const messages = [];
+    let currentMessage = null;
+    
+    for (const line of lines) {
+      if (line.startsWith('agent:')) {
+        // Save previous message if exists
+        if (currentMessage) {
+          messages.push(currentMessage);
+        }
+        // Start new agent message
+        currentMessage = {
+          speaker: 'agent',
+          text: line.replace('agent:', '').trim()
+        };
+      } else if (line.startsWith('user:')) {
+        // Save previous message if exists
+        if (currentMessage) {
+          messages.push(currentMessage);
+        }
+        // Start new user message
+        currentMessage = {
+          speaker: 'user',
+          text: line.replace('user:', '').trim()
+        };
+      } else if (currentMessage) {
+        // Add to current message (multi-line response)
+        currentMessage.text += '\n' + line;
+      } else {
+        // Standalone line without speaker prefix
+        messages.push({
+          speaker: 'unknown',
+          text: line
+        });
+      }
+    }
+    
+    // Don't forget the last message
+    if (currentMessage) {
+      messages.push(currentMessage);
+    }
+    
+    // Skip first agent message (usually repetitive greeting)
+    const filteredMessages = messages.filter((message, index) => {
+      return !(index === 0 && message.speaker === 'agent');
+    });
 
-    return lines.map((line, index) => {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) return null;
-      
-      if (trimmedLine.startsWith('agent:')) {
-        const text = trimmedLine.replace('agent:', '').trim();
+    return filteredMessages.map((message, index) => {
+      if (message.speaker === 'agent') {
         return (
-          <div key={index} className="mb-3">
+          <div key={index} className="mb-2">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-12 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <span className="text-white text-xs font-medium">Bot</span>
               </div>
               <div className="flex-1 bg-blue-50 rounded-lg p-3">
-                <p className="text-gray-800 text-sm leading-relaxed">{text}</p>
+                <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
               </div>
             </div>
           </div>
         );
-      } else if (trimmedLine.startsWith('user:')) {
-        const text = trimmedLine.replace('user:', '').trim();
+      } else if (message.speaker === 'user') {
         return (
-          <div key={index} className="mb-3">
+          <div key={index} className="mb-2">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-12 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white text-xs font-medium">User</span>
               </div>
               <div className="flex-1 bg-gray-100 rounded-lg p-3">
-                <p className="text-gray-800 text-sm leading-relaxed">{text}</p>
+                <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
               </div>
             </div>
           </div>
@@ -74,11 +116,11 @@ export function CallCard({ call, onUpdateFlag }: CallCardProps) {
       } else {
         return (
           <div key={index} className="mb-2">
-            <p className="text-gray-600 text-sm italic">{trimmedLine}</p>
+            <p className="text-gray-600 text-sm italic">{message.text}</p>
           </div>
         );
       }
-    }).filter(Boolean);
+    });
   };
 
   const renderEvaluationSummary = (evaluationResults: Record<string, EvaluationResult>) => {
