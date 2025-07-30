@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Users, Calendar, TrendingUp, RefreshCw, LogOut } from 'lucide-react';
+import { Phone, Users, Calendar, TrendingUp, RefreshCw, LogOut, Clock, MessageCircle, BarChart, Star } from 'lucide-react';
 import { StatusIndicator } from './components/StatusIndicator';
 import { StatsCard } from './components/StatsCard';
 import { SearchFilters } from './components/SearchFilters';
@@ -101,32 +101,62 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatsCard
-              title="Gesamtanrufe"
-              value={stats.total_calls}
-              icon={Phone}
-              color="bg-blue-500"
-            />
-            <StatsCard
-              title="Heutige Anrufe"
-              value={stats.today_calls}
-              icon={TrendingUp}
-              color="bg-green-500"
-            />
-            <StatsCard
-              title="Diese Woche"
-              value={stats.week_calls}
-              icon={Calendar}
-              color="bg-purple-500"
-            />
-            <StatsCard
-              title="Einzigartige Anrufer"
-              title="Individuelle Anrufer"
-              value={stats.unique_callers}
-              icon={Users}
-              color="bg-orange-500"
-            />
+          <div className="mb-8 space-y-4">
+            {/* First Row - Basic Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatsCard
+                title="Gesamtanrufe"
+                value={stats.total_calls.toLocaleString()}
+                icon={Phone}
+                color="bg-blue-500"
+              />
+              <StatsCard
+                title="Heutige Anrufe"
+                value={stats.today_calls.toLocaleString()}
+                icon={TrendingUp}
+                color="bg-green-500"
+              />
+              <StatsCard
+                title="Diese Woche"
+                value={stats.week_calls.toLocaleString()}
+                icon={Calendar}
+                color="bg-purple-500"
+              />
+              <StatsCard
+                title="Individuelle Anrufer"
+                value={stats.unique_callers.toLocaleString()}
+                icon={Users}
+                color="bg-orange-500"
+              />
+            </div>
+            
+            {/* Second Row - Advanced Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatsCard
+                title="Gesprächdauer"
+                value={`${Math.floor(stats.total_duration_minutes / 60)}:${(stats.total_duration_minutes % 60).toString().padStart(2, '0')} h`}
+                icon={Clock}
+                color="bg-indigo-500"
+              />
+              <StatsCard
+                title="Antworten"
+                value={stats.total_bot_replies.toLocaleString()}
+                icon={MessageCircle}
+                color="bg-cyan-500"
+              />
+              <StatsCard
+                title="Durchschnittsdauer"
+                value={`${Math.floor(stats.average_duration_minutes)}:${Math.round((stats.average_duration_minutes % 1) * 60).toString().padStart(2, '0')} min`}
+                icon={BarChart}
+                color="bg-emerald-500"
+              />
+              <StatsCard
+                title="Rating"
+                value={`${stats.overall_rating_percent}%`}
+                icon={Star}
+                color="bg-amber-500"
+              />
+            </div>
           </div>
         )}
 

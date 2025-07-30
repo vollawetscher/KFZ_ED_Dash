@@ -27,6 +27,10 @@ export interface CallStats {
   today_calls: number;
   week_calls: number;
   unique_callers: number;
+  total_duration_minutes: number;
+  total_bot_replies: number;
+  average_duration_minutes: number;
+  overall_rating_percent: number;
 }
 
 export interface SearchFilters {
