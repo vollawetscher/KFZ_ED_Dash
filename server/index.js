@@ -353,8 +353,13 @@ app.get('/api/stats', async (req, res) => {
       .select('caller_number')
       .neq('caller_number', null);
 
-    if (totalError || todayError || weekError || uniqueError) {
-      console.error('Stats query error:', { totalError, todayError, weekError, uniqueError });
+    // Get all calls with duration and transcript data for advanced stats
+    const { data: allCallsData, error: allCallsError } = await supabase
+      .from('calls')
+      .select('duration, transcript, evaluation_results');
+
+    if (totalError || todayError || weekError || uniqueError || allCallsError) {
+      console.error('Stats query error:', { totalError, todayError, weekError, uniqueError, allCallsError });
       return res.status(500).json({ error: 'Database error' });
     }
 
@@ -362,11 +367,56 @@ app.get('/api/stats', async (req, res) => {
       ? [...new Set(uniqueCallersData.map(call => call.caller_number))].length 
       : 0;
 
+    // Calculate advanced statistics
+    let totalDurationMinutes = 0;
+    let totalBotReplies = 0;
+    let callsWithDuration = 0;
+    let totalSuccessfulCriteria = 0;
+    let totalCriteria = 0;
+
+    if (allCallsData && allCallsData.length > 0) {
+      allCallsData.forEach(call => {
+        // Calculate total duration
+        if (call.duration && call.duration > 0) {
+          totalDurationMinutes += Math.round(call.duration / 60);
+          callsWithDuration++;
+        }
+
+        // Count bot replies in transcript
+        if (call.transcript) {
+          const agentMessages = call.transcript.split('\n').filter(line => 
+            line.trim().toLowerCase().startsWith('agent:')
+          );
+          totalBotReplies += agentMessages.length;
+        }
+
+        // Calculate evaluation success rate
+        if (call.evaluation_results && typeof call.evaluation_results === 'object') {
+          const evaluations = Object.values(call.evaluation_results);
+          evaluations.forEach(evaluation => {
+            if (evaluation && typeof evaluation === 'object' && evaluation.result) {
+              totalCriteria++;
+              if (evaluation.result === 'success') {
+                totalSuccessfulCriteria++;
+              }
+            }
+          });
+        }
+      });
+    }
+
+    const averageDurationMinutes = callsWithDuration > 0 ? totalDurationMinutes / callsWithDuration : 0;
+    const overallRatingPercent = totalCriteria > 0 ? Math.round((totalSuccessfulCriteria / totalCriteria) * 100) : 0;
+
     const stats = {
       total_calls: totalCalls || 0,
       today_calls: todayCalls || 0,
       week_calls: weekCalls || 0,
-      unique_callers: uniqueCallers
+      unique_callers: uniqueCallers,
+      total_duration_minutes: totalDurationMinutes,
+      total_bot_replies: totalBotReplies,
+      average_duration_minutes: averageDurationMinutes,
+      overall_rating_percent: overallRatingPercent
     };
     
     res.json(stats);
