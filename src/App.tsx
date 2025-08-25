@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Users, Calendar, TrendingUp, RefreshCw, LogOut, Clock, MessageCircle, BarChart, Star } from 'lucide-react';
+import { Phone, Users, Calendar, TrendingUp, RefreshCw, LogOut, Clock, MessageCircle, BarChart, Star, Settings } from 'lucide-react';
 import { StatusIndicator } from './components/StatusIndicator';
 import { StatsCard } from './components/StatsCard';
 import { SearchFilters } from './components/SearchFilters';
