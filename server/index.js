@@ -755,7 +755,16 @@ app.post('/api/fix-passwords', async (req, res) => {
       .eq('username', 'developer')
       .select();
 
-    console.log('Developer update result:', { devUpdate, devError });
+    console.log('Developer update result:', { 
+      devUpdate, 
+      devError: devError ? {
+        message: devError.message,
+        details: devError.details,
+        hint: devError.hint,
+        code: devError.code
+      } : null
+    });
+    
     // Update customer user password  
     const { data: customerUpdate, error: customerError } = await supabase
       .from('dashboard_users')
@@ -763,7 +772,16 @@ app.post('/api/fix-passwords', async (req, res) => {
       .eq('username', 'erding_customer')
       .select();
 
-    console.log('Customer update result:', { customerUpdate, customerError });
+    console.log('Customer update result:', { 
+      customerUpdate, 
+      customerError: customerError ? {
+        message: customerError.message,
+        details: customerError.details,
+        hint: customerError.hint,
+        code: customerError.code
+      } : null
+    });
+    
     if (devError || customerError) {
       console.error('Error updating passwords:', { devError, customerError });
       return res.status(500).json({ error: 'Failed to update passwords' });
