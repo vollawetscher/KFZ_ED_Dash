@@ -755,6 +755,7 @@ app.post('/api/fix-passwords', async (req, res) => {
       .eq('username', 'developer')
       .select();
 
+    console.log('Developer update result:', { devUpdate, devError });
     // Update customer user password  
     const { data: customerUpdate, error: customerError } = await supabase
       .from('dashboard_users')
@@ -762,15 +763,25 @@ app.post('/api/fix-passwords', async (req, res) => {
       .eq('username', 'erding_customer')
       .select();
 
+    console.log('Customer update result:', { customerUpdate, customerError });
     if (devError || customerError) {
       console.error('Error updating passwords:', { devError, customerError });
       return res.status(500).json({ error: 'Failed to update passwords' });
     }
 
+    // Verify the updates by fetching the users again
+    const { data: verifyUsers, error: verifyError } = await supabase
+      .from('dashboard_users')
+      .select('username, password_hash')
+      .in('username', ['developer', 'erding_customer']);
+
+    console.log('Verification - current users in database:', verifyUsers);
+    console.log('Verification error:', verifyError);
     console.log('Password hashes updated successfully');
     res.json({ 
       message: 'Password hashes fixed successfully',
-      updated_users: ['developer', 'erding_customer']
+      updated_users: ['developer', 'erding_customer'],
+      verification: verifyUsers
     });
 
   } catch (error) {
@@ -779,6 +790,50 @@ app.post('/api/fix-passwords', async (req, res) => {
   }
 });
 
+// Debug endpoint to check current password hashes in database
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('dashboard_users')
+      .select('username, password_hash, allowed_agent_ids, is_developer');
+
+    if (error) {
+      console.error('Error fetching users for debug:', error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    // Test the hashes against known passwords
+    const testResults = [];
+    for (const user of users) {
+      const testPassword = user.username === 'developer' ? 'dev123' : 'erding123';
+      try {
+        const matches = await bcrypt.compare(testPassword, user.password_hash);
+        testResults.push({
+          username: user.username,
+          hash: user.password_hash,
+          testPassword,
+          hashMatches: matches
+        });
+      } catch (error) {
+        testResults.push({
+          username: user.username,
+          hash: user.password_hash,
+          testPassword,
+          hashMatches: false,
+          error: error.message
+        });
+      }
+    }
+
+    res.json({ 
+      users: users,
+      hashTests: testResults
+    });
+  } catch (error) {
+    console.error('Debug users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
