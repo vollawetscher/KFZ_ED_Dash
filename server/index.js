@@ -733,6 +733,48 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
+// Temporary fix endpoint to update incorrect password hashes
+app.post('/api/fix-passwords', async (req, res) => {
+  try {
+    console.log('Fixing password hashes...');
+    
+    // Generate correct hashes
+    const dev123Hash = await bcrypt.hash('dev123', 10);
+    const erding123Hash = await bcrypt.hash('erding123', 10);
+    
+    console.log('Generated hashes:', { dev123Hash, erding123Hash });
+    
+    // Update developer user password
+    const { data: devUpdate, error: devError } = await supabase
+      .from('dashboard_users')
+      .update({ password_hash: dev123Hash })
+      .eq('username', 'developer')
+      .select();
+
+    // Update customer user password  
+    const { data: customerUpdate, error: customerError } = await supabase
+      .from('dashboard_users')
+      .update({ password_hash: erding123Hash })
+      .eq('username', 'erding_customer')
+      .select();
+
+    if (devError || customerError) {
+      console.error('Error updating passwords:', { devError, customerError });
+      return res.status(500).json({ error: 'Failed to update passwords' });
+    }
+
+    console.log('Password hashes updated successfully');
+    res.json({ 
+      message: 'Password hashes fixed successfully',
+      updated_users: ['developer', 'erding_customer']
+    });
+
+  } catch (error) {
+    console.error('Password fix error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
