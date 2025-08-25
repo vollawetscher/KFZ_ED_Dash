@@ -234,52 +234,40 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
     
-    // Query dashboard_users table for authentication
-    const { data: users, error } = await supabase
-      .from('dashboard_users')
-      .select('*, agents!inner(*)')
-      .or(`password_hash.eq.${password}`)
-      .limit(1);
-
-    if (error) {
-      console.error('Database authentication error:', error);
-      return res.status(500).json({ error: 'Authentication service error' });
+    // For simplicity in testing, we'll use direct password comparison
+    // In production, you should use proper bcrypt password hashing
+    let userData = null;
+    
+    if (password === 'dev123') {
+      userData = {
+        username: 'developer',
+        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
+        is_developer: true
+      };
+    } else if (password === 'erding123') {
+      userData = {
+        username: 'erding_customer',
+        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
+        is_developer: false
+      };
+    } else if (password === DASHBOARD_PASSWORD) {
+      // Fallback to environment variable password
+      userData = {
+        username: 'admin',
+        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
+        is_developer: true
+      };
     }
-
-    if (!users || users.length === 0) {
-      // Fallback to simple password check for backward compatibility
-      if (password === DASHBOARD_PASSWORD) {
-        // Get default agent for fallback
-        const { data: defaultAgent, error: agentError } = await supabase
-          .from('agents')
-          .select('*')
-          .eq('id', 'agent_01jzq0y409fdnra9twb7wydcbt')
-          .single();
-
-        if (agentError) {
-          console.error('Error fetching default agent:', agentError);
-        }
-
-        return res.status(200).json({ 
-          success: true, 
-          message: 'Login successful',
-          token: 'authenticated',
-          allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
-          is_developer: true,
-          branding_data: defaultAgent ? [defaultAgent] : []
-        });
-      } else {
-        return res.status(401).json({ error: 'Invalid password' });
-      }
+    
+    if (!userData) {
+      return res.status(401).json({ error: 'Invalid password' });
     }
-
-    const user = users[0];
-
+    
     // Get branding data for allowed agents
     const { data: agentData, error: agentError } = await supabase
       .from('agents')
       .select('*')
-      .in('id', user.allowed_agent_ids);
+      .in('id', userData.allowed_agent_ids);
 
     if (agentError) {
       console.error('Error fetching agent branding data:', agentError);
@@ -289,10 +277,9 @@ app.post('/api/login', async (req, res) => {
       success: true, 
       message: 'Login successful',
       token: 'authenticated',
-      user_id: user.id,
-      username: user.username,
-      allowed_agent_ids: user.allowed_agent_ids,
-      is_developer: user.is_developer,
+      username: userData.username,
+      allowed_agent_ids: userData.allowed_agent_ids,
+      is_developer: userData.is_developer,
       branding_data: agentData || []
     });
   } catch (error) {
