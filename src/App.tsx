@@ -7,12 +7,13 @@ import { CallCard } from './components/CallCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { LoginScreen } from './components/LoginScreen';
+import { DashboardUser, AgentConfig } from './types';
 import { useCallData } from './hooks/useCallData';
 import { useWebSocket } from './hooks/useWebSocket';
-import { SearchFilters as SearchFiltersType } from './types';
+import { SearchFilters as SearchFiltersType, CallRecord } from './types';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<DashboardUser | null>(null);
   const [filters, setFilters] = useState<SearchFiltersType>({
     search: '',
     caller: '',
@@ -21,14 +22,39 @@ function App() {
     to_date: ''
   });
 
-  const { calls, stats, loading, error, total, fetchCalls, addNewCall, updateCallFlagStatus } = useCallData();
+  const { calls, stats, loading, error, total, fetchCalls, fetchStats, addNewCall, updateCallFlagStatus } = useCallData();
   const { isConnected, lastMessage } = useWebSocket('wss://kfzeddash-production.up.railway.app');
 
   // Check authentication on component mount
   useEffect(() => {
     const authToken = localStorage.getItem('dashboard_auth');
-    if (authToken === 'authenticated') {
-      setIsAuthenticated(true);
+    const userData = localStorage.getItem('dashboard_user');
+    
+    if (authToken && userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+        // Clear invalid data
+        localStorage.removeItem('dashboard_auth');
+        localStorage.removeItem('dashboard_user');
+      }
+    } else if (authToken === 'authenticated') {
+      // Handle legacy authentication format
+      setUser({
+        token: 'authenticated',
+        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
+        is_developer: true,
+        branding_data: [
+          {
+            id: 'agent_01jzq0y409fdnra9twb7wydcbt',
+            branding_name: 'KFZ-Zulassung Erding',
+            evaluation_criteria_config: {},
+            created_at: new Date().toISOString()
+          }
+        ]
+      });
     }
   }, []);
 
@@ -203,7 +229,12 @@ function App() {
             ) : (
               <div className="grid gap-6">
                 {calls.map((call) => (
-                  <CallCard key={call.id} call={call} onUpdateFlag={updateCallFlagStatus} />
+                  <CallCard 
+                    key={call.id} 
+                    call={call} 
+                    agentConfig={getAgentConfigForCall(call)}
+                    onUpdateFlag={updateCallFlagStatus} 
+                  />
                 ))}
               </div>
             )}

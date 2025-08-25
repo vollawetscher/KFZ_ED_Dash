@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Phone, Clock, Calendar, ChevronDown, ChevronUp, CheckCircle, XCircle, AlertCircle, BarChart3, Flag } from 'lucide-react';
-import { CallRecord, EvaluationResult } from '../types';
+import { CallRecord, EvaluationResult, AgentConfig } from '../types';
 import { format } from 'date-fns';
 
 interface CallCardProps {
   call: CallRecord;
+  agentConfig?: AgentConfig;
   onUpdateFlag: (callId: string, isFlagged: boolean) => Promise<boolean>;
 }
 
-export function CallCard({ call, onUpdateFlag }: CallCardProps) {
+export function CallCard({ call, agentConfig, onUpdateFlag }: CallCardProps) {
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
   const [isEvaluationExpanded, setIsEvaluationExpanded] = useState(false);
   const [isUpdatingFlag, setIsUpdatingFlag] = useState(false);
@@ -206,9 +207,14 @@ export function CallCard({ call, onUpdateFlag }: CallCardProps) {
                 const statusText = isSuccess ? 'Erfüllt' : 'Nicht erfüllt';
                 
                 // Format identifier for display
-                const displayName = identifier
+                let displayName = identifier
                   .replace(/_/g, ' ')
                   .replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Use agent config for dynamic naming if available
+                if (agentConfig?.evaluation_criteria_config?.[identifier]) {
+                  displayName = agentConfig.evaluation_criteria_config[identifier].name;
+                }
 
                 return (
                   <div key={index} className={`rounded-lg p-4 border ${colorClass}`}>

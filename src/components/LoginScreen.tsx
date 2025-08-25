@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, Phone } from 'lucide-react';
+import { DashboardUser } from '../types';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onLogin: (user: DashboardUser) => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -30,7 +31,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       if (response.ok) {
         // Store authentication token in localStorage
         localStorage.setItem('dashboard_auth', data.token);
-        onLogin();
+        localStorage.setItem('dashboard_user', JSON.stringify(data));
+        onLogin(data);
       } else {
         setError(data.error || 'Login fehlgeschlagen');
       }

@@ -10,7 +10,7 @@ export function useCallData() {
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
 
-  const fetchCalls = useCallback(async (filters: Partial<SearchFilters> = {}, limit = 50, offset = 0) => {
+  const fetchCalls = useCallback(async (filters: Partial<SearchFilters> = {}, limit = 50, offset = 0, agentIds: string[] = []) => {
     try {
       setLoading(true);
       setError(null);
@@ -22,6 +22,10 @@ export function useCallData() {
           Object.entries(filters).filter(([_, value]) => value && value.trim() !== '')
         )
       });
+      
+      if (agentIds.length > 0) {
+        params.set('agent_ids', agentIds.join(','));
+      }
       
       const response = await fetch(`${API_BASE_URL}/api/calls?${params}`);
 
@@ -46,9 +50,15 @@ export function useCallData() {
     }
   }, []);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (agentIds: string[] = []) => {
     try {
      
+      const params = new URLSearchParams();
+      if (agentIds.length > 0) {
+        params.set('agent_ids', agentIds.join(','));
+      }
+      
+      const queryString = params.toString() ? `?${params.toString()}` : '';
       const response = await fetch(`${API_BASE_URL}/api/stats`);
 
       if (!response.ok) {
@@ -62,11 +72,15 @@ export function useCallData() {
     }
   }, []);
 
-  const addNewCall = useCallback((newCall: CallRecord) => {
+  const addNewCall = useCallback((newCall: CallRecord, userAgentIds: string[] = []) => {
+    // Only add the call if it belongs to one of the user's allowed agents
+    if (userAgentIds.length > 0 && !userAgentIds.includes(newCall.agent_id)) {
+      return;
+    }
+    
     setCalls(prev => [newCall, ...prev]);
     setTotal(prev => prev + 1);
-    fetchStats(); // Refresh stats when new call is added
-  }, [fetchStats]);
+  }, []);
 
   const updateCallFlagStatus = useCallback(async (callId: string, isFlagged: boolean) => {
     try {
@@ -95,11 +109,6 @@ export function useCallData() {
       return false;
     }
   }, []);
-
-  useEffect(() => {
-    fetchCalls();
-    fetchStats();
-  }, [fetchCalls, fetchStats]);
 
   return {
     calls,
