@@ -254,15 +254,19 @@ app.post('/api/login', async (req, res) => {
     
     for (const user of users) {
       console.log('Checking user:', user.username);
+      console.log('  - Received password:', JSON.stringify(password));
+      console.log('  - Stored hash:', JSON.stringify(user.password_hash));
+      console.log('  - Password length:', password.length, 'Hash length:', user.password_hash.length);
       try {
         const passwordMatch = await bcrypt.compare(password, user.password_hash);
-        console.log('Password match for', user.username, ':', passwordMatch);
+        console.log('  - bcrypt.compare result for', user.username, ':', passwordMatch);
+        console.log('  - bcrypt.compare inputs - password type:', typeof password, 'hash type:', typeof user.password_hash);
         if (passwordMatch) {
           authenticatedUser = user;
           break;
         }
       } catch (error) {
-        console.error('Error comparing password for user:', user.username, error);
+        console.error('  - bcrypt.compare error for user:', user.username, error);
         continue;
       }
     }
