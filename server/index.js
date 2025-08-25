@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import WebSocket, { WebSocketServer } from 'ws';
 import http from 'http';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 
 // Load environment variables
 dotenv.config();
@@ -234,32 +235,33 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
     
-    // For simplicity in testing, we'll use direct password comparison
-    // In production, you should use proper bcrypt password hashing
-    let userData = null;
-    
-    if (password === 'dev123') {
-      userData = {
-        username: 'developer',
-        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
-        is_developer: true
-      };
-    } else if (password === 'erding123') {
-      userData = {
-        username: 'erding_customer',
-        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
-        is_developer: false
-      };
-    } else if (password === DASHBOARD_PASSWORD) {
-      // Fallback to environment variable password
-      userData = {
-        username: 'admin',
-        allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
-        is_developer: true
-      };
+    // Get all users from database to check credentials
+    const { data: users, error: usersError } = await supabase
+      .from('dashboard_users')
+      .select('*');
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return res.status(500).json({ error: 'Database error during login' });
     }
     
-    if (!userData) {
+    // Try to find a user with matching password
+    let authenticatedUser = null;
+    
+    for (const user of users) {
+      try {
+        const passwordMatch = await bcrypt.compare(password, user.password_hash);
+        if (passwordMatch) {
+          authenticatedUser = user;
+          break;
+        }
+      } catch (error) {
+        console.error('Error comparing password for user:', user.username, error);
+        continue;
+      }
+    }
+    
+    if (!authenticatedUser) {
       return res.status(401).json({ error: 'Invalid password' });
     }
     
@@ -267,7 +269,7 @@ app.post('/api/login', async (req, res) => {
     const { data: agentData, error: agentError } = await supabase
       .from('agents')
       .select('*')
-      .in('id', userData.allowed_agent_ids);
+      .in('id', authenticatedUser.allowed_agent_ids);
 
     if (agentError) {
       console.error('Error fetching agent branding data:', agentError);
@@ -277,9 +279,9 @@ app.post('/api/login', async (req, res) => {
       success: true, 
       message: 'Login successful',
       token: 'authenticated',
-      username: userData.username,
-      allowed_agent_ids: userData.allowed_agent_ids,
-      is_developer: userData.is_developer,
+      username: authenticatedUser.username,
+      allowed_agent_ids: authenticatedUser.allowed_agent_ids,
+      is_developer: authenticatedUser.is_developer,
       branding_data: agentData || []
     });
   } catch (error) {
@@ -546,6 +548,160 @@ app.patch('/api/calls/:id', async (req, res) => {
     console.log('Call flag status updated:', id, 'flagged:', is_flagged_for_review);
     res.json({ message: 'Call flag status updated successfully', call: data });
     
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin endpoint for creating new agents
+app.post('/api/admin/agents', async (req, res) => {
+  try {
+    const { agent_id, branding_name, evaluation_criteria_config } = req.body;
+    
+    // Validate required fields
+    if (!agent_id || !branding_name) {
+      return res.status(400).json({ error: 'agent_id and branding_name are required' });
+    }
+    
+    // Validate evaluation_criteria_config if provided
+    let criteriaConfig = {};
+    if (evaluation_criteria_config) {
+      if (typeof evaluation_criteria_config === 'string') {
+        try {
+          criteriaConfig = JSON.parse(evaluation_criteria_config);
+        } catch (error) {
+          return res.status(400).json({ error: 'evaluation_criteria_config must be valid JSON' });
+        }
+      } else if (typeof evaluation_criteria_config === 'object') {
+        criteriaConfig = evaluation_criteria_config;
+      } else {
+        return res.status(400).json({ error: 'evaluation_criteria_config must be an object or JSON string' });
+      }
+    }
+    
+    // Insert agent into database
+    const { data, error } = await supabase
+      .from('agents')
+      .insert([{
+        id: agent_id,
+        branding_name: branding_name,
+        evaluation_criteria_config: criteriaConfig
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating agent:', error);
+      if (error.code === '23505') { // Unique constraint violation
+        return res.status(409).json({ error: 'Agent with this ID already exists' });
+      }
+      return res.status(500).json({ error: 'Database error creating agent' });
+    }
+
+    console.log('New agent created:', data.id, 'with branding:', data.branding_name);
+    res.status(201).json({ 
+      message: 'Agent created successfully', 
+      agent: data 
+    });
+
+  } catch (error) {
+    console.error('Admin agent creation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin endpoint for creating new dashboard users
+app.post('/api/admin/users', async (req, res) => {
+  try {
+    const { username, password, allowed_agent_ids, is_developer } = req.body;
+    
+    // Validate required fields
+    if (!username || !password) {
+      return res.status(400).json({ error: 'username and password are required' });
+    }
+    
+    // Validate and parse allowed_agent_ids
+    let agentIds = [];
+    if (allowed_agent_ids) {
+      if (typeof allowed_agent_ids === 'string') {
+        agentIds = allowed_agent_ids.split(',').map(id => id.trim()).filter(id => id);
+      } else if (Array.isArray(allowed_agent_ids)) {
+        agentIds = allowed_agent_ids.filter(id => typeof id === 'string' && id.trim());
+      } else {
+        return res.status(400).json({ error: 'allowed_agent_ids must be an array or comma-separated string' });
+      }
+    }
+    
+    // Hash the password
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // Insert user into database
+    const { data, error } = await supabase
+      .from('dashboard_users')
+      .insert([{
+        username: username,
+        password_hash: passwordHash,
+        allowed_agent_ids: agentIds,
+        is_developer: is_developer || false
+      }])
+      .select('id, username, allowed_agent_ids, is_developer, created_at')
+      .single();
+
+    if (error) {
+      console.error('Error creating user:', error);
+      if (error.code === '23505') { // Unique constraint violation
+        return res.status(409).json({ error: 'User with this username already exists' });
+      }
+      return res.status(500).json({ error: 'Database error creating user' });
+    }
+
+    console.log('New user created:', data.username, 'with access to agents:', data.allowed_agent_ids);
+    res.status(201).json({ 
+      message: 'User created successfully', 
+      user: data 
+    });
+
+  } catch (error) {
+    console.error('Admin user creation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin endpoint for listing all agents (useful for the frontend)
+app.get('/api/admin/agents', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching agents:', error);
+      return res.status(500).json({ error: 'Database error fetching agents' });
+    }
+
+    res.json({ agents: data || [] });
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin endpoint for listing all dashboard users (useful for the frontend)
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('dashboard_users')
+      .select('id, username, allowed_agent_ids, is_developer, created_at') // Exclude password_hash for security
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching users:', error);
+      return res.status(500).json({ error: 'Database error fetching users' });
+    }
+
+    res.json({ users: data || [] });
   } catch (error) {
     console.error('API error:', error);
     res.status(500).json({ error: 'Internal server error' });
