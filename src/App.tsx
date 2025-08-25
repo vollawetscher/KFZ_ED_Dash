@@ -123,7 +123,7 @@ function App() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  {user.branding_data?.[0]?.branding_name || 'AI Sprachassistent'} Dashboard
+                  {user.is_developer ? 'AI Sprachassistent' : (user.branding_data?.[0]?.branding_name || 'AI Sprachassistent')} Dashboard
                 </h1>
                 <p className="text-sm text-gray-500">Echtzeit-Anrufüberwachung und Transkription</p>
               </div>
