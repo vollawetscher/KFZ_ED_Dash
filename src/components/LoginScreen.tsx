@@ -53,10 +53,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            KFZ-Zulassung Erding
+            AI Sprachassistent Dashboard
           </h1>
           <p className="text-gray-600">
-            Call Dashboard - Testphase
+            Anmeldung erforderlich
           </p>
         </div>
 
