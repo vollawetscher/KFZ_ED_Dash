@@ -235,6 +235,8 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
     
+    console.log('Login attempt with password length:', password.length);
+    
     // Get all users from database to check credentials
     const { data: users, error: usersError } = await supabase
       .from('dashboard_users')
@@ -245,12 +247,16 @@ app.post('/api/login', async (req, res) => {
       return res.status(500).json({ error: 'Database error during login' });
     }
     
+    console.log('Found users in database:', users.length);
+    
     // Try to find a user with matching password
     let authenticatedUser = null;
     
     for (const user of users) {
+      console.log('Checking user:', user.username);
       try {
         const passwordMatch = await bcrypt.compare(password, user.password_hash);
+        console.log('Password match for', user.username, ':', passwordMatch);
         if (passwordMatch) {
           authenticatedUser = user;
           break;
@@ -262,8 +268,11 @@ app.post('/api/login', async (req, res) => {
     }
     
     if (!authenticatedUser) {
+      console.log('No matching user found for provided password');
       return res.status(401).json({ error: 'Invalid password' });
     }
+    
+    console.log('Successfully authenticated user:', authenticatedUser.username);
     
     // Get branding data for allowed agents
     const { data: agentData, error: agentError } = await supabase
@@ -551,6 +560,22 @@ app.patch('/api/calls/:id', async (req, res) => {
   } catch (error) {
     console.error('API error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Temporary endpoint to generate bcrypt hashes (remove in production)
+app.get('/api/generate-hash/:password', async (req, res) => {
+  try {
+    const { password } = req.params;
+    const hash = await bcrypt.hash(password, 10);
+    res.json({ 
+      password: password,
+      hash: hash,
+      note: 'This endpoint should be removed in production'
+    });
+  } catch (error) {
+    console.error('Hash generation error:', error);
+    res.status(500).json({ error: 'Hash generation failed' });
   }
 });
 
