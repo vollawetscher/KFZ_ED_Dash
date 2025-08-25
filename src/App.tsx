@@ -34,6 +34,9 @@ function App() {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        // Fetch initial data for authenticated user
+        fetchCalls({}, 50, 0, parsedUser.allowed_agent_ids);
+        fetchStats(parsedUser.allowed_agent_ids);
       } catch (error) {
         console.error('Error parsing user data from localStorage:', error);
         // Clear invalid data
@@ -42,7 +45,7 @@ function App() {
       }
     } else if (authToken === 'authenticated') {
       // Handle legacy authentication format
-      setUser({
+      const legacyUser = {
         token: 'authenticated',
         allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
         is_developer: true,
@@ -54,19 +57,25 @@ function App() {
             created_at: new Date().toISOString()
           }
         ]
-      });
+      };
+      setUser(legacyUser);
+      // Fetch initial data for legacy user
+      fetchCalls({}, 50, 0, legacyUser.allowed_agent_ids);
+      fetchStats(legacyUser.allowed_agent_ids);
     }
-  }, []);
+  }, [fetchCalls, fetchStats]);
 
   // Handle real-time updates
   useEffect(() => {
     if (lastMessage?.type === 'new_call' && lastMessage?.data) {
-      addNewCall(lastMessage.data);
+      addNewCall(lastMessage.data, user?.allowed_agent_ids);
     }
-  }, [lastMessage, addNewCall]);
+  }, [lastMessage, addNewCall, user]);
 
   const handleSearch = () => {
-    fetchCalls(filters);
+    if (user) {
+      fetchCalls(filters, 50, 0, user.allowed_agent_ids);
+    }
   };
 
   const handleRefresh = () => {
@@ -78,12 +87,23 @@ function App() {
 
   const handleLogin = (userData: DashboardUser) => {
     setUser(userData);
+    // Fetch initial data immediately after login
+    fetchCalls({}, 50, 0, userData.allowed_agent_ids);
+    fetchStats(userData.allowed_agent_ids);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('dashboard_auth');
     localStorage.removeItem('dashboard_user');
     setUser(null);
+  };
+
+  // Helper function to get agent config for a specific call
+  const getAgentConfigForCall = (call: CallRecord): AgentConfig | undefined => {
+    if (!user?.branding_data || !call.agent_id) {
+      return undefined;
+    }
+    return user.branding_data.find(agent => agent.id === call.agent_id);
   };
 
   // Show login screen if not authenticated
@@ -102,7 +122,9 @@ function App() {
                 <Phone className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">KFZ-Zulassung Erding Call Dashboard</h1>
+                <h1 className="text-xl font-bold text-gray-900">
+                  {user.branding_data?.[0]?.branding_name || 'KFZ-Zulassung Erding'} Call Dashboard
+                </h1>
                 <p className="text-sm text-gray-500">Echtzeit-Anrufüberwachung und Transkription</p>
               </div>
             </div>

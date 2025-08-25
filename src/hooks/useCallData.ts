@@ -59,7 +59,7 @@ export function useCallData() {
       }
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      const response = await fetch(`${API_BASE_URL}/api/stats`);
+      const response = await fetch(`${API_BASE_URL}/api/stats${queryString}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
