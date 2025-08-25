@@ -29,12 +29,7 @@ export function AdminPanel({ user }: AdminPanelProps) {
   const [agentForm, setAgentForm] = useState<AgentFormData>({
     agent_id: '',
     branding_name: '',
-    evaluation_criteria_config: JSON.stringify({
-      criterion_1: {
-        name: 'Sample Criterion',
-        description: 'Description of the evaluation criterion'
-      }
-    }, null, 2)
+    evaluation_criteria_config: ''
   });
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentMessage, setAgentMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -268,17 +263,19 @@ export function AdminPanel({ user }: AdminPanelProps) {
 
               <div>
                 <label htmlFor="evaluation_config" className="block text-sm font-medium text-gray-700 mb-1">
-                  Evaluation Criteria Configuration (JSON)*
+                  Evaluation Criteria Configuration (JSON) - Optional
                 </label>
                 <textarea
                   id="evaluation_config"
-                  required
                   rows={8}
-                  placeholder="Enter JSON configuration..."
+                  placeholder="Leave empty to use ElevenLabs agent configuration, or enter custom JSON..."
                   value={agentForm.evaluation_criteria_config}
                   onChange={(e) => setAgentForm({ ...agentForm, evaluation_criteria_config: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Evaluation criteria are typically configured in the ElevenLabs dashboard. Leave this field empty unless you need custom criteria definitions for display purposes.
+                </p>
               </div>
 
               {agentMessage && (
