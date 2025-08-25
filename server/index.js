@@ -125,6 +125,9 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     // Extrahieren der caller_id aus den dynamic_variables (falls verfügbar)
     const callerNumber = req.body.data?.conversation_initiation_client_data?.dynamic_variables?.caller_id || 'unknown_caller';
 
+    // Extrahieren der agent_id aus den dynamic_variables (falls verfügbar)
+    const agentId = req.body.data?.conversation_initiation_client_data?.dynamic_variables?.agent_id || 'unknown_agent';
+
     // Extrahieren der evaluation_results aus der Analyse (falls verfügbar)
     const evaluationResults = req.body.data?.analysis?.evaluation_criteria_results || null;
 
@@ -137,6 +140,7 @@ app.post('/webhook/elevenlabs', async (req, res) => {
     // Erstellen des Call-Records
     const callRecord = {
       id: conversationId,
+      agent_id: agentId,
       caller_number: callerNumber,
       transcript: fullTranscript,
       timestamp: eventTimestamp ? new Date(eventTimestamp * 1000).toISOString() : new Date().toISOString(),
@@ -163,7 +167,7 @@ app.post('/webhook/elevenlabs', async (req, res) => {
       data: data
     });
 
-    console.log('New call processed:', data.id, 'from caller:', callerNumber);
+    console.log('New call processed:', data.id, 'from caller:', callerNumber, 'agent:', agentId);
     res.status(200).json({ message: 'Webhook processed successfully', call_id: data.id });
 
   } catch (error) {
@@ -207,7 +211,8 @@ app.post('/webhook/elevenlabs-initiation-data', async (req, res) => {
     const response = {
       type: "conversation_initiation_client_data",
       dynamic_variables: {
-        caller_id: callerId
+        caller_id: callerId,
+        agent_id: agentId || 'unknown_agent'
       }
     };
 
@@ -221,7 +226,7 @@ app.post('/webhook/elevenlabs-initiation-data', async (req, res) => {
 });
 
 // Login endpoint for simplified authentication
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { password } = req.body;
     
@@ -229,15 +234,67 @@ app.post('/api/login', (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
     
-    if (password === DASHBOARD_PASSWORD) {
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Login successful',
-        token: 'authenticated' // Simple token for frontend
-      });
-    } else {
-      return res.status(401).json({ error: 'Invalid password' });
+    // Query dashboard_users table for authentication
+    const { data: users, error } = await supabase
+      .from('dashboard_users')
+      .select('*, agents!inner(*)')
+      .or(`password_hash.eq.${password}`)
+      .limit(1);
+
+    if (error) {
+      console.error('Database authentication error:', error);
+      return res.status(500).json({ error: 'Authentication service error' });
     }
+
+    if (!users || users.length === 0) {
+      // Fallback to simple password check for backward compatibility
+      if (password === DASHBOARD_PASSWORD) {
+        // Get default agent for fallback
+        const { data: defaultAgent, error: agentError } = await supabase
+          .from('agents')
+          .select('*')
+          .eq('id', 'agent_01jzq0y409fdnra9twb7wydcbt')
+          .single();
+
+        if (agentError) {
+          console.error('Error fetching default agent:', agentError);
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Login successful',
+          token: 'authenticated',
+          allowed_agent_ids: ['agent_01jzq0y409fdnra9twb7wydcbt'],
+          is_developer: true,
+          branding_data: defaultAgent ? [defaultAgent] : []
+        });
+      } else {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+    }
+
+    const user = users[0];
+
+    // Get branding data for allowed agents
+    const { data: agentData, error: agentError } = await supabase
+      .from('agents')
+      .select('*')
+      .in('id', user.allowed_agent_ids);
+
+    if (agentError) {
+      console.error('Error fetching agent branding data:', agentError);
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Login successful',
+      token: 'authenticated',
+      user_id: user.id,
+      username: user.username,
+      allowed_agent_ids: user.allowed_agent_ids,
+      is_developer: user.is_developer,
+      branding_data: agentData || []
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -253,7 +310,7 @@ app.get('/webhook/elevenlabs', (req, res) => {
 // API endpoints
 app.get('/api/calls', async (req, res) => {
   try {
-    const { search, caller, conv_id, from_date, to_date, limit = 50, offset = 0 } = req.query;
+    const { search, caller, conv_id, from_date, to_date, limit = 50, offset = 0, agent_ids } = req.query;
     
     let query = supabase
       .from('calls')
@@ -261,6 +318,11 @@ app.get('/api/calls', async (req, res) => {
       .order('created_at', { ascending: false });
 
     // Apply filters
+    if (agent_ids) {
+      const agentIdArray = Array.isArray(agent_ids) ? agent_ids : agent_ids.split(',');
+      query = query.in('agent_id', agentIdArray);
+    }
+
     if (search) {
       query = query.or(`transcript.ilike.%${search}%,caller_number.ilike.%${search}%`);
     }
@@ -326,37 +388,53 @@ app.get('/api/calls/:id', async (req, res) => {
 
 app.get('/api/stats', async (req, res) => {
   try {
+    const { agent_ids } = req.query;
+    
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
+    // Base query builder function
+    const buildQuery = (baseQuery) => {
+      let query = baseQuery;
+      if (agent_ids) {
+        const agentIdArray = Array.isArray(agent_ids) ? agent_ids : agent_ids.split(',');
+        query = query.in('agent_id', agentIdArray);
+      }
+      return query;
+    };
+
     // Get total calls
-    const { count: totalCalls, error: totalError } = await supabase
-      .from('calls')
-      .select('*', { count: 'exact', head: true });
+    const { count: totalCalls, error: totalError } = await buildQuery(
+      supabase.from('calls').select('*', { count: 'exact', head: true })
+    );
 
     // Get today's calls
-    const { count: todayCalls, error: todayError } = await supabase
-      .from('calls')
-      .select('*', { count: 'exact', head: true })
-      .gte('timestamp', today.toISOString());
+    const { count: todayCalls, error: todayError } = await buildQuery(
+      supabase.from('calls')
+        .select('*', { count: 'exact', head: true })
+        .gte('timestamp', today.toISOString())
+    );
 
     // Get this week's calls
-    const { count: weekCalls, error: weekError } = await supabase
-      .from('calls')
-      .select('*', { count: 'exact', head: true })
-      .gte('timestamp', thisWeek.toISOString());
+    const { count: weekCalls, error: weekError } = await buildQuery(
+      supabase.from('calls')
+        .select('*', { count: 'exact', head: true })
+        .gte('timestamp', thisWeek.toISOString())
+    );
 
     // Get unique callers
-    const { data: uniqueCallersData, error: uniqueError } = await supabase
-      .from('calls')
-      .select('caller_number')
-      .neq('caller_number', null);
+    const { data: uniqueCallersData, error: uniqueError } = await buildQuery(
+      supabase.from('calls')
+        .select('caller_number')
+        .neq('caller_number', null)
+    );
 
     // Get all calls with duration and transcript data for advanced stats
-    const { data: allCallsData, error: allCallsError } = await supabase
-      .from('calls')
-      .select('duration, transcript, evaluation_results');
+    const { data: allCallsData, error: allCallsError } = await buildQuery(
+      supabase.from('calls')
+        .select('duration, transcript, evaluation_results, is_flagged_for_review')
+    );
 
     if (totalError || todayError || weekError || uniqueError || allCallsError) {
       console.error('Stats query error:', { totalError, todayError, weekError, uniqueError, allCallsError });
@@ -429,6 +507,29 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// Get agent configuration
+app.get('/api/agent-config/:agentId', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('id', agentId)
+      .single();
+
+    if (error) {
+      console.error('Agent config query error:', error);
+      return res.status(404).json({ error: 'Agent configuration not found' });
+    }
+    
+    res.json(data);
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Update call flag status
 app.patch('/api/calls/:id', async (req, res) => {
   try {
@@ -487,6 +588,24 @@ async function startServer() {
       console.log('Please check your SUPABASE_URL and SUPABASE_ANON_KEY environment variables');
     } else {
       console.log('✅ Supabase connection successful');
+    }
+    
+    // Test new tables
+    const { data: agentsData, error: agentsError } = await supabase
+      .from('agents')
+      .select('count')
+      .limit(1);
+      
+    const { data: usersData, error: usersError } = await supabase
+      .from('dashboard_users')
+      .select('count')
+      .limit(1);
+    
+    if (agentsError || usersError) {
+      console.error('New tables test failed:', { agentsError, usersError });
+      console.log('Please ensure the latest migration has been applied');
+    } else {
+      console.log('✅ Multi-tenancy tables ready');
     }
   } catch (error) {
     console.error('Supabase connection test failed:', error);
