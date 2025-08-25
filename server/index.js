@@ -772,6 +772,46 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
+// Admin endpoint for updating user permissions
+app.patch('/api/admin/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { allowed_agent_ids } = req.body;
+    
+    if (!allowed_agent_ids || !Array.isArray(allowed_agent_ids)) {
+      return res.status(400).json({ error: 'allowed_agent_ids must be an array' });
+    }
+    
+    console.log('Updating user permissions:', { userId, allowed_agent_ids });
+    
+    const { data, error } = await supabase
+      .from('dashboard_users')
+      .update({ allowed_agent_ids })
+      .eq('id', userId)
+      .select('id, username, allowed_agent_ids, is_developer, created_at')
+      .single();
+
+    if (error) {
+      console.error('Error updating user permissions:', error);
+      return res.status(500).json({ error: 'Database error updating user' });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('User permissions updated successfully:', data.username, 'now has access to:', data.allowed_agent_ids);
+    res.json({ 
+      message: 'User permissions updated successfully', 
+      user: data 
+    });
+
+  } catch (error) {
+    console.error('Admin user update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Temporary fix endpoint to update incorrect password hashes
 app.post('/api/fix-passwords', async (req, res) => {
   try {
