@@ -586,10 +586,19 @@ app.get('/api/generate-hash/:password', async (req, res) => {
 // Admin endpoint for creating new agents
 app.post('/api/admin/agents', async (req, res) => {
   try {
+    console.log('Admin agent creation request received:', {
+      body: req.body,
+      headers: req.headers['content-type']
+    });
+    
     const { agent_id, branding_name, evaluation_criteria_config } = req.body;
     
     // Validate required fields
     if (!agent_id || !branding_name) {
+      console.log('Validation failed - missing required fields:', {
+        agent_id: !!agent_id,
+        branding_name: !!branding_name
+      });
       return res.status(400).json({ error: 'agent_id and branding_name are required' });
     }
     
@@ -599,32 +608,57 @@ app.post('/api/admin/agents', async (req, res) => {
       if (typeof evaluation_criteria_config === 'string') {
         try {
           criteriaConfig = JSON.parse(evaluation_criteria_config);
+          console.log('Parsed JSON criteria config successfully');
         } catch (error) {
+          console.log('JSON parsing error:', error.message);
           return res.status(400).json({ error: 'evaluation_criteria_config must be valid JSON' });
         }
       } else if (typeof evaluation_criteria_config === 'object') {
         criteriaConfig = evaluation_criteria_config;
+        console.log('Using object criteria config directly');
       } else {
+        console.log('Invalid criteria config type:', typeof evaluation_criteria_config);
         return res.status(400).json({ error: 'evaluation_criteria_config must be an object or JSON string' });
       }
     }
     
+    const agentData = {
+      id: agent_id,
+      branding_name: branding_name,
+      evaluation_criteria_config: criteriaConfig
+    };
+    console.log('Attempting to insert agent data:', agentData);
+    
     // Insert agent into database
     const { data, error } = await supabase
       .from('agents')
-      .insert([{
-        id: agent_id,
-        branding_name: branding_name,
-        evaluation_criteria_config: criteriaConfig
-      }])
+      .insert([agentData])
       .select()
       .single();
+
+    console.log('Supabase insert result:', {
+      data: data,
+      error: error ? {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      } : null
+    });
 
     if (error) {
       console.error('Error creating agent:', error);
       if (error.code === '23505') { // Unique constraint violation
+        console.log('Unique constraint violation - agent already exists');
         return res.status(409).json({ error: 'Agent with this ID already exists' });
       }
+      console.log('Database error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        postgresError: error
+      });
       return res.status(500).json({ error: 'Database error creating agent' });
     }
 
@@ -636,6 +670,7 @@ app.post('/api/admin/agents', async (req, res) => {
 
   } catch (error) {
     console.error('Admin agent creation error:', error);
+    console.log('Full error stack:', error.stack);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
