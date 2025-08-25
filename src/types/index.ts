@@ -61,4 +61,5 @@ export interface SearchFilters {
   conv_id: string;
   from_date: string;
   to_date: string;
+  agent_id: string;
 }

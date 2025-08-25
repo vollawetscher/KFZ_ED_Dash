@@ -21,7 +21,8 @@ function App() {
     caller: '',
     conv_id: '',
     from_date: '',
-    to_date: ''
+    to_date: '',
+    agent_id: ''
   });
 
   const { calls, stats, loading, error, total, fetchCalls, fetchStats, addNewCall, updateCallFlagStatus } = useCallData();
@@ -73,20 +74,44 @@ function App() {
   useEffect(() => {
     if (lastMessage?.type === 'new_call' && lastMessage?.data) {
       const agentIds = user?.is_developer ? [] : user?.allowed_agent_ids;
-      addNewCall(lastMessage.data, agentIds);
+      addNewCall(lastMessage.data, agentIds, filters.agent_id || undefined);
     }
-  }, [lastMessage, addNewCall, user]);
+  }, [lastMessage, addNewCall, user, filters.agent_id]);
 
   const handleSearch = () => {
     if (user) {
-      const agentIds = user.is_developer ? [] : user.allowed_agent_ids;
+      let agentIds: string[] = [];
+      
+      if (filters.agent_id) {
+        // If a specific agent is selected, only fetch calls from that agent
+        agentIds = [filters.agent_id];
+      } else if (user.is_developer) {
+        // Developer with no agent filter sees all agents
+        agentIds = [];
+      } else {
+        // Regular user sees their allowed agents
+        agentIds = user.allowed_agent_ids;
+      }
+      
       fetchCalls(filters, 50, 0, agentIds);
     }
   };
 
   const handleRefresh = () => {
     if (user) {
-      const agentIds = user.is_developer ? [] : user.allowed_agent_ids;
+      let agentIds: string[] = [];
+      
+      if (filters.agent_id) {
+        // If a specific agent is selected, only fetch calls from that agent
+        agentIds = [filters.agent_id];
+      } else if (user.is_developer) {
+        // Developer with no agent filter sees all agents
+        agentIds = [];
+      } else {
+        // Regular user sees their allowed agents
+        agentIds = user.allowed_agent_ids;
+      }
+      
       fetchCalls(filters, 50, 0, agentIds);
       fetchStats(agentIds);
     }
@@ -238,6 +263,7 @@ function App() {
           filters={filters}
           onFiltersChange={setFilters}
           onSearch={handleSearch}
+          availableAgents={user.branding_data || []}
         />
 
         {/* Error Message */}

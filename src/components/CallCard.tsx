@@ -257,7 +257,17 @@ export function CallCard({ call, agentConfig, onUpdateFlag }: CallCardProps) {
           </div>
           <div>
             <h3 className="font-medium text-gray-900">{call.caller_number}</h3>
-            <p className="text-sm text-gray-500">Anruf-ID: {call.id}</p>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>Anruf-ID: {call.id}</span>
+              {(agentConfig || call.agent_id) && (
+                <>
+                  <span>•</span>
+                  <span className="text-blue-600 font-medium">
+                    {agentConfig ? agentConfig.branding_name : call.agent_id}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="text-right">

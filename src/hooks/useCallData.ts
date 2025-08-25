@@ -72,9 +72,14 @@ export function useCallData() {
     }
   }, []);
 
-  const addNewCall = useCallback((newCall: CallRecord, userAgentIds: string[] = []) => {
+  const addNewCall = useCallback((newCall: CallRecord, userAgentIds: string[] = [], currentAgentFilter?: string) => {
     // Only add the call if it belongs to one of the user's allowed agents
     if (userAgentIds.length > 0 && !userAgentIds.includes(newCall.agent_id)) {
+      return;
+    }
+    
+    // Only add the call if it matches the current agent filter (if one is active)
+    if (currentAgentFilter && newCall.agent_id !== currentAgentFilter) {
       return;
     }
     
