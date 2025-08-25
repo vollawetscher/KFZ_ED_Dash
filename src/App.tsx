@@ -70,20 +70,24 @@ function App() {
   };
 
   const handleRefresh = () => {
-    fetchCalls(filters);
+    if (user) {
+      fetchCalls(filters, 50, 0, user.allowed_agent_ids);
+      fetchStats(user.allowed_agent_ids);
+    }
   };
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+  const handleLogin = (userData: DashboardUser) => {
+    setUser(userData);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('dashboard_auth');
-    setIsAuthenticated(false);
+    localStorage.removeItem('dashboard_user');
+    setUser(null);
   };
 
   // Show login screen if not authenticated
-  if (!isAuthenticated) {
+  if (!user) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
