@@ -7,6 +7,7 @@ import { CallCard } from './components/CallCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { LoginScreen } from './components/LoginScreen';
+import { AdminPanel } from './components/AdminPanel';
 import { DashboardUser, AgentConfig } from './types';
 import { useCallData } from './hooks/useCallData';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -14,6 +15,7 @@ import { SearchFilters as SearchFiltersType, CallRecord } from './types';
 
 function App() {
   const [user, setUser] = useState<DashboardUser | null>(null);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'admin'>('dashboard');
   const [filters, setFilters] = useState<SearchFiltersType>({
     search: '',
     caller: '',
@@ -130,6 +132,16 @@ function App() {
             </div>
             <div className="flex items-center gap-4">
               <StatusIndicator isConnected={isConnected} />
+              {user.is_developer && (
+                <button
+                  onClick={() => setCurrentView(currentView === 'dashboard' ? 'admin' : 'dashboard')}
+                  className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                  title={currentView === 'dashboard' ? 'Open Admin Panel' : 'Back to Dashboard'}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="text-sm">{currentView === 'dashboard' ? 'Admin' : 'Dashboard'}</span>
+                </button>
+              )}
               <button
                 onClick={handleRefresh}
                 className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
@@ -150,7 +162,10 @@ function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {currentView === 'admin' ? (
+        <AdminPanel user={user} />
+      ) : (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         {stats && (
           <div className="mb-8 space-y-4">
@@ -266,7 +281,8 @@ function App() {
             )}
           </div>
         </div>
-      </main>
+        </main>
+      )}
     </div>
   );
 }
