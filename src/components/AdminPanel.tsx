@@ -112,12 +112,7 @@ export function AdminPanel({ user }: AdminPanelProps) {
         setAgentForm({
           agent_id: '',
           branding_name: '',
-          evaluation_criteria_config: JSON.stringify({
-            criterion_1: {
-              name: 'Sample Criterion',
-              description: 'Description of the evaluation criterion'
-            }
-          }, null, 2)
+          evaluation_criteria_config: ''
         });
         fetchExistingAgents(); // Refresh list
       } else {
