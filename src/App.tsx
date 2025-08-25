@@ -37,8 +37,9 @@ function App() {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         // Fetch initial data for authenticated user
-        fetchCalls({}, 50, 0, parsedUser.allowed_agent_ids);
-        fetchStats(parsedUser.allowed_agent_ids);
+        const agentIds = parsedUser.is_developer ? [] : parsedUser.allowed_agent_ids;
+        fetchCalls({}, 50, 0, agentIds);
+        fetchStats(agentIds);
       } catch (error) {
         console.error('Error parsing user data from localStorage:', error);
         // Clear invalid data
@@ -62,36 +63,41 @@ function App() {
       };
       setUser(legacyUser);
       // Fetch initial data for legacy user
-      fetchCalls({}, 50, 0, legacyUser.allowed_agent_ids);
-      fetchStats(legacyUser.allowed_agent_ids);
+      const agentIds = legacyUser.is_developer ? [] : legacyUser.allowed_agent_ids;
+      fetchCalls({}, 50, 0, agentIds);
+      fetchStats(agentIds);
     }
   }, [fetchCalls, fetchStats]);
 
   // Handle real-time updates
   useEffect(() => {
     if (lastMessage?.type === 'new_call' && lastMessage?.data) {
-      addNewCall(lastMessage.data, user?.allowed_agent_ids);
+      const agentIds = user?.is_developer ? [] : user?.allowed_agent_ids;
+      addNewCall(lastMessage.data, agentIds);
     }
   }, [lastMessage, addNewCall, user]);
 
   const handleSearch = () => {
     if (user) {
-      fetchCalls(filters, 50, 0, user.allowed_agent_ids);
+      const agentIds = user.is_developer ? [] : user.allowed_agent_ids;
+      fetchCalls(filters, 50, 0, agentIds);
     }
   };
 
   const handleRefresh = () => {
     if (user) {
-      fetchCalls(filters, 50, 0, user.allowed_agent_ids);
-      fetchStats(user.allowed_agent_ids);
+      const agentIds = user.is_developer ? [] : user.allowed_agent_ids;
+      fetchCalls(filters, 50, 0, agentIds);
+      fetchStats(agentIds);
     }
   };
 
   const handleLogin = (userData: DashboardUser) => {
     setUser(userData);
     // Fetch initial data immediately after login
-    fetchCalls({}, 50, 0, userData.allowed_agent_ids);
-    fetchStats(userData.allowed_agent_ids);
+    const agentIds = userData.is_developer ? [] : userData.allowed_agent_ids;
+    fetchCalls({}, 50, 0, agentIds);
+    fetchStats(agentIds);
   };
 
   const handleLogout = () => {
