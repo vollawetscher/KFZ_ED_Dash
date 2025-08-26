@@ -278,11 +278,16 @@ app.post('/api/login', async (req, res) => {
     
     console.log('Successfully authenticated user:', authenticatedUser.username);
     
-    // Get branding data for allowed agents
-    const { data: agentData, error: agentError } = await supabase
-      .from('agents')
-      .select('*')
-      .in('id', authenticatedUser.allowed_agent_ids);
+    // Get branding data - all agents for developers, only allowed agents for regular users
+    let agentQuery = supabase.from('agents').select('*');
+    
+    if (!authenticatedUser.is_developer) {
+      // Regular users: only fetch their allowed agents
+      agentQuery = agentQuery.in('id', authenticatedUser.allowed_agent_ids);
+    }
+    // Developer users: fetch all agents (no filter applied)
+    
+    const { data: agentData, error: agentError } = await agentQuery;
 
     if (agentError) {
       console.error('Error fetching agent branding data:', agentError);
