@@ -94,6 +94,7 @@ function App() {
       }
       
       fetchCalls(filters, 50, 0, agentIds);
+      fetchStats(agentIds);
     }
   };
 
