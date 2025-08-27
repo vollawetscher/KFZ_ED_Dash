@@ -5,7 +5,7 @@ import { SearchFilters as SearchFiltersType, AgentConfig } from '../types';
 interface SearchFiltersProps {
   filters: SearchFiltersType;
   onFiltersChange: (filters: SearchFiltersType) => void;
-  onSearch: () => void;
+  onSearch: (filters: SearchFiltersType) => void;
   availableAgents: AgentConfig[];
 }
 
@@ -107,15 +107,16 @@ export function SearchFilters({ filters, onFiltersChange, onSearch, availableAge
       
       <div className="mt-4 flex gap-2">
         <button
-          onClick={onSearch}
+          onClick={() => onSearch(filters)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           Suchen
         </button>
         <button
           onClick={() => {
-            onFiltersChange({ search: '', caller: '', conv_id: '', from_date: '', to_date: '', agent_id: '' });
-            onSearch();
+            const clearedFilters = { search: '', caller: '', conv_id: '', from_date: '', to_date: '', agent_id: '' };
+            onFiltersChange(clearedFilters);
+            onSearch(clearedFilters);
           }}
           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
         >
