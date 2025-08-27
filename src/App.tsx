@@ -12,8 +12,18 @@ import { DashboardUser, AgentConfig } from './types';
 import { useCallData } from './hooks/useCallData';
 import { useWebSocket } from './hooks/useWebSocket';
 import { SearchFilters as SearchFiltersType, CallRecord } from './types';
+import { MockDashboard } from './components/MockDashboard';
 
 function App() {
+  // Check if we're in mock mode for screenshots
+  const urlParams = new URLSearchParams(window.location.search);
+  const isMockMode = urlParams.get('mock') === 'true';
+
+  // If in mock mode, render the mock dashboard
+  if (isMockMode) {
+    return <MockDashboard />;
+  }
+
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'admin'>('dashboard');
   const [filters, setFilters] = useState<SearchFiltersType>({
