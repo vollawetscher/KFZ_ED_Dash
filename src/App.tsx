@@ -78,13 +78,13 @@ function App() {
     }
   }, [lastMessage, addNewCall, user, filters.agent_id]);
 
-  const handleSearch = () => {
+  const handleSearch = (searchFilters: SearchFiltersType = filters) => {
     if (user) {
       let agentIds: string[] = [];
       
-      if (filters.agent_id) {
+      if (searchFilters.agent_id) {
         // If a specific agent is selected, only fetch calls from that agent
-        agentIds = [filters.agent_id];
+        agentIds = [searchFilters.agent_id];
       } else if (user.is_developer) {
         // Developer with no agent filter sees all agents
         agentIds = [];
@@ -93,7 +93,7 @@ function App() {
         agentIds = user.allowed_agent_ids;
       }
       
-      fetchCalls(filters, 50, 0, agentIds);
+      fetchCalls(searchFilters, 50, 0, agentIds);
       fetchStats(agentIds);
     }
   };
