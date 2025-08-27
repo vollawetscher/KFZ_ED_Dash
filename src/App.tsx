@@ -142,6 +142,7 @@ function App() {
   // Show login screen if not authenticated
   if (!user) {
     return <LoginScreen onLogin={handleLogin} />;
+    fetchStats(agentIds);
   }
 
   return (
