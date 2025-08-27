@@ -70,6 +70,7 @@ export function useCallData() {
     } catch (err) {
       console.error('Error fetching stats:', err);
     }
+  }
   const addNewCall = useCallback((newCall: CallRecord, userAgentIds: string[] = [], currentAgentFilter?: string) => {
     // Only add the call if it belongs to one of the user's allowed agents
     if (userAgentIds.length > 0 && !userAgentIds.includes(newCall.agent_id)) {
